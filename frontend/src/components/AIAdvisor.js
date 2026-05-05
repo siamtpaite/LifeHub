@@ -1,23 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 
-const SYSTEM_PROMPT = `You are LifeHub AI Advisor — a sharp, friendly personal finance and lifestyle assistant embedded inside the LifeHub app.
-
-You have access to the user's real data which will be provided in each message as JSON context. Use it to give specific, actionable advice. Never be vague.
-
-Your areas of expertise:
-- Subscription analysis: spot wasteful spending, upcoming renewals, cheaper alternatives
-- Warranty management: flag expiring warranties, remind about claims
-- Skills marketplace: suggest skill exchanges, identify demand vs supply gaps
-- Savings: calculate actual savings, project annual costs, suggest cuts
-- Recall alerts: flag products the user owns that have known issues
-- Enterprise insights: churn risk, tenant health, revenue forecasting
-
-Tone: confident, concise, warm. Like a smart friend who happens to be a financial advisor.
-Format: use short paragraphs. Use ₹ for INR. Bold key numbers or actions using **text**.
-Never say "I don't have access to" — you always have the user's data in context.
-Never ask for information the user has already provided in their data.
-Keep responses under 200 words unless the user asks for detail.`;
-
 const SUGGESTIONS = [
   "Which subscriptions should I cancel?",
   "What warranties are expiring soon?",
@@ -36,7 +18,6 @@ export default function AIAdvisor({ authContext, currency = "INR" }) {
   const [error, setError] = useState("");
   const bottomRef = useRef(null);
 
-  // Load all user data for context
   useEffect(() => {
     const loadUserData = async () => {
       try {
@@ -82,41 +63,24 @@ export default function AIAdvisor({ authContext, currency = "INR" }) {
     setLoading(true);
 
     try {
-      const contextBlock = userData
-        ? `\n\n<user_data>\n${JSON.stringify(userData, null, 2)}\n</user_data>`
-        : "";
-
-      const apiMessages = newMessages.map((m, i) => ({
-        role: m.role,
-        content: i === 0 && m.role === "user"
-          ? m.content + contextBlock
-          : m.content,
-      }));
-
-      // Always include context in the latest user message
-      if (apiMessages.length > 0) {
-        const last = apiMessages[apiMessages.length - 1];
-        if (last.role === "user" && !last.content.includes("<user_data>")) {
-          last.content = last.content + contextBlock;
-        }
-      }
-
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const t = await user.getIdToken();
+      const response = await fetch(`${apiBaseUrl}/api/ai/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${t}`,
+        },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: SYSTEM_PROMPT,
-          messages: apiMessages,
+          messages: newMessages,
+          userData,
         }),
       });
 
       const data = await response.json();
-      const reply = data.content?.find(b => b.type === "text")?.text || "Sorry, I couldn't generate a response.";
-      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+      if (!response.ok) throw new Error(data.message || "AI request failed");
+      setMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
     } catch (e) {
-      setError("AI request failed. Please try again.");
+      setError(e.message || "AI request failed. Please try again.");
       setMessages(prev => prev.slice(0, -1));
     } finally {
       setLoading(false);
@@ -126,11 +90,7 @@ export default function AIAdvisor({ authContext, currency = "INR" }) {
   const renderMessage = (msg, i) => {
     const isUser = msg.role === "user";
     return (
-      <div key={i} style={{
-        display: "flex",
-        justifyContent: isUser ? "flex-end" : "flex-start",
-        marginBottom: 12,
-      }}>
+      <div key={i} style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", marginBottom: 12 }}>
         {!isUser && (
           <div style={{
             width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
@@ -141,18 +101,12 @@ export default function AIAdvisor({ authContext, currency = "INR" }) {
         )}
         <div style={{
           maxWidth: "78%",
-          background: isUser
-            ? "rgba(167,139,250,.2)"
-            : "rgba(255,255,255,.06)",
+          background: isUser ? "rgba(167,139,250,.2)" : "rgba(255,255,255,.06)",
           border: `1px solid ${isUser ? "rgba(167,139,250,.35)" : "rgba(255,255,255,.1)"}`,
           borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-          padding: "10px 14px",
-          fontSize: 13,
-          color: "rgba(255,255,255,.9)",
-          lineHeight: 1.6,
-          whiteSpace: "pre-wrap",
+          padding: "10px 14px", fontSize: 13,
+          color: "rgba(255,255,255,.9)", lineHeight: 1.6, whiteSpace: "pre-wrap",
         }}>
-          {/* Render bold text */}
           {msg.content.split(/(\*\*[^*]+\*\*)/).map((part, j) =>
             part.startsWith("**") && part.endsWith("**")
               ? <strong key={j} style={{ color: "#fff" }}>{part.slice(2, -2)}</strong>
@@ -168,22 +122,13 @@ export default function AIAdvisor({ authContext, currency = "INR" }) {
       <div className="panel-title">AI Advisor</div>
       <div className="panel-sub">Your personal finance and lifestyle intelligence, powered by Claude AI.</div>
 
-      {/* Chat area */}
-      <div style={{
-        flex: 1,
-        overflowY: "auto",
-        marginBottom: 12,
-        paddingRight: 4,
-        minHeight: 0,
-      }}>
+      <div style={{ flex: 1, overflowY: "auto", marginBottom: 12, paddingRight: 4, minHeight: 0 }}>
         {messages.length === 0 && (
           <div>
             <div style={{
-              background: "rgba(167,139,250,.08)",
-              border: "1px solid rgba(167,139,250,.2)",
-              borderRadius: 12, padding: "14px 16px",
-              marginBottom: 16, fontSize: 13,
-              color: "rgba(255,255,255,.7)", lineHeight: 1.6,
+              background: "rgba(167,139,250,.08)", border: "1px solid rgba(167,139,250,.2)",
+              borderRadius: 12, padding: "14px 16px", marginBottom: 16,
+              fontSize: 13, color: "rgba(255,255,255,.7)", lineHeight: 1.6,
             }}>
               ✦ I have access to your subscriptions, warranties, skills, savings and recall data. Ask me anything about your financial health or what to do next.
             </div>
@@ -191,15 +136,13 @@ export default function AIAdvisor({ authContext, currency = "INR" }) {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {SUGGESTIONS.map((s, i) => (
                 <button key={i} onClick={() => send(s)} style={{
-                  background: "rgba(255,255,255,.07)",
-                  border: "1px solid rgba(255,255,255,.12)",
-                  borderRadius: 20, padding: "6px 14px",
-                  fontSize: 12, color: "rgba(255,255,255,.7)",
-                  cursor: "pointer", fontFamily: "Inter,sans-serif",
-                  transition: "all .15s",
+                  background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.12)",
+                  borderRadius: 20, padding: "6px 14px", fontSize: 12,
+                  color: "rgba(255,255,255,.7)", cursor: "pointer",
+                  fontFamily: "Inter,sans-serif", transition: "all .15s",
                 }}
-                  onMouseOver={e => { e.target.style.background = "rgba(167,139,250,.2)"; e.target.style.borderColor = "rgba(167,139,250,.4)"; }}
-                  onMouseOut={e => { e.target.style.background = "rgba(255,255,255,.07)"; e.target.style.borderColor = "rgba(255,255,255,.12)"; }}
+                  onMouseOver={e => { e.currentTarget.style.background = "rgba(167,139,250,.2)"; e.currentTarget.style.borderColor = "rgba(167,139,250,.4)"; }}
+                  onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,.07)"; e.currentTarget.style.borderColor = "rgba(255,255,255,.12)"; }}
                 >{s}</button>
               ))}
             </div>
@@ -216,14 +159,10 @@ export default function AIAdvisor({ authContext, currency = "INR" }) {
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13,
             }}>✦</div>
             <div style={{
-              background: "rgba(255,255,255,.06)",
-              border: "1px solid rgba(255,255,255,.1)",
-              borderRadius: "16px 16px 16px 4px",
-              padding: "10px 16px", fontSize: 13,
-              color: "rgba(255,255,255,.4)",
-            }}>
-              Thinking…
-            </div>
+              background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)",
+              borderRadius: "16px 16px 16px 4px", padding: "10px 16px",
+              fontSize: 13, color: "rgba(255,255,255,.4)",
+            }}>Thinking…</div>
           </div>
         )}
 
@@ -231,7 +170,6 @@ export default function AIAdvisor({ authContext, currency = "INR" }) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
         <input
           value={input}
@@ -241,17 +179,12 @@ export default function AIAdvisor({ authContext, currency = "INR" }) {
           style={{ flex: 1 }}
           disabled={loading}
         />
-        <button
-          onClick={() => send()}
-          disabled={loading || !input.trim()}
-          style={{
-            background: input.trim() ? "linear-gradient(135deg,#a78bfa,#6d28d9)" : "rgba(255,255,255,.08)",
-            border: "none", borderRadius: 10, padding: "0 18px",
-            color: "#fff", fontSize: 14, cursor: input.trim() ? "pointer" : "default",
-            fontFamily: "Inter,sans-serif", flexShrink: 0,
-            transition: "all .15s",
-          }}
-        >↑</button>
+        <button onClick={() => send()} disabled={loading || !input.trim()} style={{
+          background: input.trim() ? "linear-gradient(135deg,#a78bfa,#6d28d9)" : "rgba(255,255,255,.08)",
+          border: "none", borderRadius: 10, padding: "0 18px",
+          color: "#fff", fontSize: 14, cursor: input.trim() ? "pointer" : "default",
+          fontFamily: "Inter,sans-serif", flexShrink: 0, transition: "all .15s",
+        }}>↑</button>
       </div>
     </>
   );
