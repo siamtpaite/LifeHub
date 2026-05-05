@@ -1,104 +1,78 @@
 import React, { useEffect, useState } from "react";
 
-function Recalls({ authContext }) {
+export default function Recalls({ authContext, formOpen, setFormOpen }) {
   const { user, apiBaseUrl } = authContext;
   const [productName, setProductName] = useState("");
   const [description, setDescription] = useState("");
-  const [severity, setSeverity] = useState("Low");
+  const [severity, setSeverity] = useState("High");
   const [recalls, setRecalls] = useState({});
   const [error, setError] = useState("");
 
-  const fetchRecalls = async () => {
-    setError("");
+  const load = async () => {
     try {
-      const token = await user.getIdToken();
-      const response = await fetch(`${apiBaseUrl}/api/recalls`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        throw new Error("Failed to load recalls.");
-      }
-      const data = await response.json();
-      setRecalls(data);
-    } catch (err) {
-      setError(err.message);
-    }
+      const t=await user.getIdToken();
+      const r=await fetch(`${apiBaseUrl}/api/recalls`,{headers:{Authorization:`Bearer ${t}`}});
+      if(r.ok) setRecalls(await r.json());
+    } catch(e){ setError(e.message); }
   };
 
-  const handleReport = async (event) => {
-    event.preventDefault();
-    setError("");
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch(`${apiBaseUrl}/api/recalls`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ productName, description, severity })
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to report recall.");
-      }
+  useEffect(()=>{ load(); },[]);
 
-      setProductName("");
-      setDescription("");
-      setSeverity("Low");
-      await fetchRecalls();
-    } catch (err) {
-      setError(err.message);
-    }
+  const save = async () => {
+    if (!productName||!description) return;
+    try {
+      const t=await user.getIdToken();
+      await fetch(`${apiBaseUrl}/api/recalls`,{
+        method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${t}`},
+        body:JSON.stringify({productName,description,severity}),
+      });
+      setProductName(""); setDescription(""); setSeverity("High");
+      setFormOpen(false); load();
+    } catch(e){ setError(e.message); }
   };
 
-  useEffect(() => {
-    fetchRecalls();
-  }, []);
+  const sc = {High:"b-red",Medium:"b-amber",Low:"b-blue"};
 
   return (
-    <div className="module">
-      <h2>Crowdsourced Recalls</h2>
-      <form className="grid-form" onSubmit={handleReport}>
-        <input
-          required
-          value={productName}
-          placeholder="Product Name"
-          onChange={(event) => setProductName(event.target.value)}
-        />
-        <input
-          required
-          value={description}
-          placeholder="Description"
-          onChange={(event) => setDescription(event.target.value)}
-        />
-        <select value={severity} onChange={(event) => setSeverity(event.target.value)}>
-          <option>Low</option>
-          <option>Medium</option>
-          <option>High</option>
-        </select>
-        <button type="submit">Report Recall</button>
-      </form>
-      {error && <p className="error-text">{error}</p>}
+    <>
+      <div className="panel-title">Recalls</div>
+      <div className="panel-sub">Community-reported product safety issues. Add reports and browse what others have flagged.</div>
 
-      <h3>Community Recalls</h3>
-      {Object.keys(recalls).length === 0 && <p className="subtitle">No recalls reported yet.</p>}
-      {Object.keys(recalls).map((product) => (
-        <div key={product} className="recall-group">
-          <h4>{product}</h4>
-          <ul className="list">
-            {recalls[product].map((recall, index) => (
-              <li key={recall.id || `${product}-${index}`}>
-                <span>{recall.description}</span>
-                <span>Severity: {recall.severity}</span>
-                <span>Reported: {new Date(recall.reportedAt).toLocaleString()}</span>
-              </li>
-            ))}
-          </ul>
+      <div className={`form-card ${formOpen?"open":""}`}>
+        <div className="form-row">
+          <div className="f-field"><div className="f-label">Product</div><input value={productName} placeholder="Brand + model" onChange={e=>setProductName(e.target.value)}/></div>
+          <div className="f-field"><div className="f-label">Severity</div><select value={severity} onChange={e=>setSeverity(e.target.value)}><option>Low</option><option>Medium</option><option>High</option></select></div>
         </div>
-      ))}
-    </div>
+        <div className="form-row"><div className="f-field"><div className="f-label">Description</div><input value={description} placeholder="Describe the issue" onChange={e=>setDescription(e.target.value)}/></div></div>
+        <div className="btn-row">
+          <button className="btn btn-light" onClick={save}>Submit</button>
+          <button className="btn btn-ghost" onClick={()=>setFormOpen(false)}>Cancel</button>
+        </div>
+      </div>
+
+      {error && <p style={{color:"#ff5c5c",fontSize:13,marginBottom:8}}>{error}</p>}
+
+      <div className="data-wrap">
+        {Object.keys(recalls).length===0
+          ? <p style={{color:"rgba(255,255,255,.4)",fontSize:13}}>No recalls reported yet.</p>
+          : Object.entries(recalls).map(([prod,items])=>(
+            <div className="recall-group" key={prod}>
+              <div className="recall-group-head">
+                {prod}
+                <span className={`badge ${sc[items[0]?.severity]||"b-gray"}`}>{items[0]?.severity}</span>
+                <span className="badge b-gray">{items.length} report{items.length>1?"s":""}</span>
+              </div>
+              {items.map((r,i)=>(
+                <div className="recall-item" key={r.id||i}>
+                  <div className="recall-desc">{r.description}</div>
+                  <span className={`badge ${sc[r.severity]||"b-gray"}`}>{r.severity}</span>
+                  <div className="recall-ts">{new Date(r.reportedAt).toLocaleDateString()}</div>
+                </div>
+              ))}
+            </div>
+          ))
+        }
+      </div>
+    </>
   );
 }
-
-export default Recalls;

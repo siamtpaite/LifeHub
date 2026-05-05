@@ -1,71 +1,58 @@
 import React, { useEffect, useState } from "react";
 
-function Predictions({ authContext, currency = "INR" }) {
+export default function Predictions({ authContext, currency="INR" }) {
   const { user, apiBaseUrl } = authContext;
   const [data, setData] = useState(null);
-  const [error, setError] = useState("");
+  const fmt = v => new Intl.NumberFormat(undefined,{style:"currency",currency}).format(Number(v||0));
 
-  const formatCurrency = (value) =>
-    new Intl.NumberFormat(undefined, { style: "currency", currency }).format(Number(value || 0));
-
-  useEffect(() => {
-    async function fetchPredictions() {
-      setError("");
+  useEffect(()=>{
+    (async()=>{
       try {
-        const token = await user.getIdToken();
-        const response = await fetch(`${apiBaseUrl}/api/predictions`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!response.ok) {
-          throw new Error("Failed to load predictions.");
-        }
-        const result = await response.json();
-        setData(result);
-      } catch (err) {
-        setError(err.message);
-      }
-    }
+        const t=await user.getIdToken();
+        const r=await fetch(`${apiBaseUrl}/api/predictions`,{headers:{Authorization:`Bearer ${t}`}});
+        if(r.ok) setData(await r.json());
+      } catch(e){}
+    })();
+  },[apiBaseUrl,user]);
 
-    fetchPredictions();
-  }, [apiBaseUrl, user]);
+  if(!data) return <><div className="panel-title">Predictions</div><p style={{color:"rgba(255,255,255,.4)",fontSize:13}}>Loading…</p></>;
 
-  if (error) {
-    return <p className="error-text">{error}</p>;
-  }
-
-  if (!data) {
-    return <p>Loading predictions...</p>;
-  }
+  const riskColor = s => s==="High"?"b-red":s==="Medium"?"b-amber":"b-green";
+  const riskLabel = score => score>4?"High":score>1?"Medium":"Safe";
 
   return (
-    <div className="module">
-      <h2>AI Predictions and Trends</h2>
+    <>
+      <div className="panel-title">Predictions</div>
+      <div className="panel-sub">AI-powered failure trends and resale value forecasts for your products.</div>
 
-      <h3>Failure Trends</h3>
-      <ul className="list">
-        {(data.trends || []).map((trend, index) => (
-          <li key={`${trend.product}-${index}`}>
-            <strong>{trend.product}</strong>
-            <span>Failures: {trend.failures}</span>
-            <span>Recalls: {trend.recalls}</span>
-            <span>Risk Score: {trend.riskScore}</span>
-          </li>
-        ))}
-      </ul>
+      <div className="section-label">Risk trends</div>
+      <table className="data-table" style={{marginBottom:20}}>
+        <thead><tr><th>Product</th><th>Risk</th><th>Failures</th><th>Recalls</th></tr></thead>
+        <tbody>
+          {(data.trends||[]).map((t,i)=>(
+            <tr key={i}>
+              <td><strong>{t.product}</strong></td>
+              <td><span className={`badge ${riskColor(riskLabel(t.riskScore))}`}>{riskLabel(t.riskScore)}</span></td>
+              <td>{t.failures}</td>
+              <td>{t.recalls}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-      <h3>Resale Forecasts</h3>
-      <ul className="list">
-        {(data.resalePredictions || []).map((prediction, index) => (
-          <li key={`${prediction.product}-${index}`}>
-            <strong>{prediction.product}</strong>
-            <span>Owned {Number(prediction.monthsOwned || 0).toFixed(1)} months</span>
-            <span>Predicted Value: {formatCurrency(prediction.predictedResaleValue)}</span>
-            <span>Recommendation: {prediction.recommendation}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+      <div className="section-label">Resale forecasts</div>
+      {(data.resalePredictions||[]).map((p,i)=>(
+        <div className="pred-card" key={i}>
+          <div>
+            <div className="pred-name">{p.product}</div>
+            <div className="pred-meta">~{Number(p.monthsOwned||0).toFixed(1)} months owned · {p.recommendation}</div>
+          </div>
+          <div>
+            <div className="pred-val" style={{color:"#f472b6"}}>{fmt(p.predictedResaleValue)}</div>
+            <div className="pred-rec">predicted resale</div>
+          </div>
+        </div>
+      ))}
+    </>
   );
 }
-
-export default Predictions;

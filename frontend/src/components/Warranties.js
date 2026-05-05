@@ -1,8 +1,11 @@
+// ═══════════════════════════════════════
+// Warranties.js
+// ═══════════════════════════════════════
 import React, { useEffect, useState } from "react";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { storage } from "../firebase";
 
-function Warranties({ authContext }) {
+export default function Warranties({ authContext, formOpen, setFormOpen }) {
   const { user, apiBaseUrl } = authContext;
   const [productName, setProductName] = useState("");
   const [warrantyExpiryDate, setWarrantyExpiryDate] = useState("");
@@ -10,112 +13,92 @@ function Warranties({ authContext }) {
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [lastOcrText, setLastOcrText] = useState("");
+  const [lastOcr, setLastOcr] = useState("");
 
-  const loadWarranties = async () => {
-    setError("");
+  const load = async () => {
     try {
-      const token = await user.getIdToken();
-      const response = await fetch(`${apiBaseUrl}/api/warranties`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        throw new Error("Failed to load warranties.");
-      }
-      setItems(await response.json());
-    } catch (err) {
-      setError(err.message);
-    }
+      const t = await user.getIdToken();
+      const r = await fetch(`${apiBaseUrl}/api/warranties`,{headers:{Authorization:`Bearer ${t}`}});
+      if (!r.ok) throw new Error("Failed to load");
+      setItems(await r.json());
+    } catch(e){ setError(e.message); }
   };
 
-  useEffect(() => {
-    loadWarranties();
-  }, []);
+  useEffect(()=>{ load(); },[]);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError("");
+  const getStatus = w => {
+    const diff=(new Date(w.warrantyExpiryDate)-Date.now())/(1000*60*60*24);
+    return diff<0?"Expired":diff<90?"Expiring soon":"Active";
+  };
+
+  const save = async () => {
+    if (!productName||!warrantyExpiryDate) return;
     setUploading(true);
-
     try {
-      let receiptUrl = "";
-      let receiptFileName = "";
-
+      let receiptUrl="",receiptFileName="";
       if (receiptFile) {
-        const fileRef = ref(storage, `receipts/${user.uid}/${Date.now()}-${receiptFile.name}`);
-        await uploadBytes(fileRef, receiptFile);
-        receiptUrl = await getDownloadURL(fileRef);
-        receiptFileName = receiptFile.name;
+        const fileRef=ref(storage,`receipts/${user.uid}/${Date.now()}-${receiptFile.name}`);
+        await uploadBytes(fileRef,receiptFile);
+        receiptUrl=await getDownloadURL(fileRef);
+        receiptFileName=receiptFile.name;
       }
-
-      const token = await user.getIdToken();
-      const response = await fetch(`${apiBaseUrl}/api/warranties`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          productName,
-          receiptUrl,
-          receiptImage: receiptUrl,
-          receiptFileName,
-          warrantyExpiryDate
-        })
+      const t=await user.getIdToken();
+      const r=await fetch(`${apiBaseUrl}/api/warranties`,{
+        method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${t}`},
+        body:JSON.stringify({productName,receiptUrl,receiptImage:receiptUrl,receiptFileName,warrantyExpiryDate}),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to save warranty.");
-      }
-      const data = await response.json();
-      setLastOcrText(data.receiptText || "No OCR data");
-
-      setProductName("");
-      setWarrantyExpiryDate("");
-      setReceiptFile(null);
-      await loadWarranties();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setUploading(false);
-    }
+      const d=await r.json();
+      if (!r.ok) throw new Error(d.message);
+      setLastOcr(d.receiptText||"");
+      setProductName(""); setWarrantyExpiryDate(""); setReceiptFile(null);
+      setFormOpen(false); load();
+    } catch(e){ setError(e.message); }
+    finally{ setUploading(false); }
   };
+
+  const sc={"Active":"b-green","Expiring soon":"b-amber","Expired":"b-red"};
+  const expiring=items.filter(w=>getStatus(w)==="Expiring soon").length;
+  const expired=items.filter(w=>getStatus(w)==="Expired").length;
 
   return (
-    <div className="module">
-      <h2>ReceiptVault (Warranties and Inventory)</h2>
-      <form className="grid-form" onSubmit={handleSubmit}>
-        <input required value={productName} placeholder="Product name" onChange={(event) => setProductName(event.target.value)} />
-        <input required type="date" value={warrantyExpiryDate} onChange={(event) => setWarrantyExpiryDate(event.target.value)} />
-        <input
-          type="file"
-          accept="image/*,application/pdf"
-          onChange={(event) => setReceiptFile(event.target.files && event.target.files[0] ? event.target.files[0] : null)}
-        />
-        <button type="submit" disabled={uploading}>
-          {uploading ? "Saving..." : "Save Warranty"}
-        </button>
-      </form>
-      {error && <p className="error-text">{error}</p>}
-      {lastOcrText && <p className="subtitle">OCR: {lastOcrText.slice(0, 160)}{lastOcrText.length > 160 ? "..." : ""}</p>}
-
-      <ul className="list">
-        {items.map((item) => (
-          <li key={item.id}>
-            <strong>{item.productName}</strong>
-            <span>Warranty expires on {item.warrantyExpiryDate}</span>
-            {item.receiptUrl && (
-              <a href={item.receiptUrl} target="_blank" rel="noreferrer">
-                View Receipt ({item.receiptFileName || "file"})
-              </a>
-            )}
-            <span>OCR: {item.receiptText || "No OCR data"}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <>
+      <div className="panel-title">ReceiptVault</div>
+      <div className="panel-sub">Store warranties, upload receipts, and get OCR extraction automatically.</div>
+      <div className="stat-row">
+        <div className="stat-chip"><div className="stat-chip-label">Total items</div><div className="stat-chip-val">{items.length}</div></div>
+        <div className="stat-chip"><div className="stat-chip-label">Expiring soon</div><div className="stat-chip-val" style={{color:"#fbbf24"}}>{expiring}</div></div>
+        <div className="stat-chip"><div className="stat-chip-label">Expired</div><div className="stat-chip-val" style={{color:"#f87171"}}>{expired}</div></div>
+      </div>
+      <div className={`form-card ${formOpen?"open":""}`}>
+        <div className="form-row">
+          <div className="f-field"><div className="f-label">Product</div><input value={productName} placeholder='MacBook Pro 16"' onChange={e=>setProductName(e.target.value)}/></div>
+          <div className="f-field"><div className="f-label">Warranty expiry</div><input type="date" value={warrantyExpiryDate} onChange={e=>setWarrantyExpiryDate(e.target.value)}/></div>
+        </div>
+        <div className="form-row"><div className="f-field" style={{flex:2}}><div className="f-label">Receipt (image / PDF)</div><input type="file" accept="image/*,application/pdf" onChange={e=>setReceiptFile(e.target.files?.[0]||null)}/></div></div>
+        <div className="btn-row">
+          <button className="btn btn-light" onClick={save} disabled={uploading}>{uploading?"Saving…":"Save & OCR"}</button>
+          <button className="btn btn-ghost" onClick={()=>setFormOpen(false)}>Cancel</button>
+        </div>
+      </div>
+      <button className="add-btn" onClick={()=>setFormOpen(f=>!f)}>+ Add warranty</button>
+      {error && <p style={{color:"#ff5c5c",fontSize:13,marginBottom:8}}>{error}</p>}
+      {lastOcr && <p style={{color:"rgba(255,255,255,.4)",fontSize:12,marginBottom:8}}>OCR: {lastOcr.slice(0,120)}</p>}
+      <div className="data-wrap">
+        <table className="data-table">
+          <thead><tr><th>Product</th><th>Expiry</th><th>OCR</th><th>Status</th></tr></thead>
+          <tbody>
+            {items.map(w=>{
+              const s=getStatus(w);
+              return <tr key={w.id}>
+                <td><strong>{w.productName}</strong></td>
+                <td>{w.warrantyExpiryDate}</td>
+                <td style={{fontSize:11,color:"rgba(255,255,255,.4)"}}>{(w.receiptText||"—").slice(0,30)}</td>
+                <td><span className={`badge ${sc[s]||"b-gray"}`}>{s}</span></td>
+              </tr>;
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
-
-export default Warranties;

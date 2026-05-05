@@ -1,51 +1,44 @@
 import React, { useEffect, useState } from "react";
 
-function Analytics({ authContext, currency = "INR" }) {
+export default function Analytics({ authContext, currency="INR" }) {
   const { user, apiBaseUrl } = authContext;
-  const [analytics, setAnalytics] = useState(null);
-  const [error, setError] = useState("");
-  const formatCurrency = (value) =>
-    new Intl.NumberFormat(undefined, { style: "currency", currency }).format(Number(value || 0));
+  const [data, setData] = useState(null);
+  const fmt = v => new Intl.NumberFormat(undefined,{style:"currency",currency}).format(Number(v||0));
 
-  useEffect(() => {
-    async function fetchAnalytics() {
-      setError("");
+  useEffect(()=>{
+    (async()=>{
       try {
-        const token = await user.getIdToken();
-        const response = await fetch(`${apiBaseUrl}/api/analytics`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!response.ok) {
-          throw new Error("Failed to load analytics.");
-        }
-        const data = await response.json();
-        setAnalytics(data);
-      } catch (err) {
-        setError(err.message);
-      }
-    }
+        const t=await user.getIdToken();
+        const r=await fetch(`${apiBaseUrl}/api/analytics`,{headers:{Authorization:`Bearer ${t}`}});
+        if(r.ok) setData(await r.json());
+      } catch(e){}
+    })();
+  },[apiBaseUrl,user]);
 
-    fetchAnalytics();
-  }, [apiBaseUrl, user]);
+  if(!data) return <><div className="panel-title">Analytics</div><p style={{color:"rgba(255,255,255,.4)",fontSize:13}}>Loading…</p></>;
 
-  if (error) {
-    return <p className="error-text">{error}</p>;
-  }
-
-  if (!analytics) {
-    return <p>Loading analytics...</p>;
-  }
+  const skills = data.topSkills||[];
+  const maxCr = Math.max(...skills.map((_,i)=>3-i),1);
 
   return (
-    <div className="module">
-      <h2>Enterprise Analytics</h2>
-      <p>Active Users: {analytics.activeUsers}</p>
-      <p>Average Subscription Cost: {formatCurrency(analytics.avgSubscriptionCost)}</p>
-      <p>Top Skills Offered: {(analytics.topSkills || []).join(", ") || "No skills yet"}</p>
-      <p>Warranty Claims: {analytics.warrantyClaims}</p>
-      <p>Recall Alerts Triggered: {analytics.recallAlerts}</p>
-    </div>
+    <>
+      <div className="panel-title">Analytics</div>
+      <div className="panel-sub">Aggregated insights across all your LifeHub data.</div>
+      <div className="stat-row">
+        <div className="stat-chip"><div className="stat-chip-label">Avg sub cost</div><div className="stat-chip-val accent">{fmt(data.avgSubscriptionCost)}</div></div>
+        <div className="stat-chip"><div className="stat-chip-label">Claims</div><div className="stat-chip-val" style={{color:"#fbbf24"}}>{data.warrantyClaims||0}</div></div>
+        <div className="stat-chip"><div className="stat-chip-label">Recall alerts</div><div className="stat-chip-val" style={{color:"#f87171"}}>{data.recallAlerts||0}</div></div>
+      </div>
+      <div className="section-label">Top skills</div>
+      {skills.length===0 ? <p style={{color:"rgba(255,255,255,.4)",fontSize:13,marginBottom:16}}>No skills yet.</p> :
+        skills.map((s,i)=>(
+          <div className="bar-row" key={i}>
+            <div className="bar-label">{s}</div>
+            <div className="bar-track"><div className="bar-fill" style={{width:`${((3-i)/maxCr)*100}%`,background:"#a78bfa"}}/></div>
+            <div className="bar-val">{3-i}cr</div>
+          </div>
+        ))
+      }
+    </>
   );
 }
-
-export default Analytics;

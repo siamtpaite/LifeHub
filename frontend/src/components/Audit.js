@@ -1,48 +1,40 @@
+// ── AUDIT ────────────────────────────────────────────────────────
 import React, { useEffect, useState } from "react";
 
-function Audit({ authContext }) {
+export function Audit({ authContext }) {
   const { user, apiBaseUrl } = authContext;
   const [logs, setLogs] = useState([]);
-  const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function fetchLogs() {
-      setError("");
+  useEffect(()=>{
+    (async()=>{
       try {
-        const token = await user.getIdToken();
-        const response = await fetch(`${apiBaseUrl}/api/audit`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!response.ok) {
-          throw new Error("Failed to load audit logs.");
-        }
-        const data = await response.json();
-        setLogs(data);
-      } catch (err) {
-        setError(err.message);
-      }
-    }
-
-    fetchLogs();
-  }, [apiBaseUrl, user]);
-
-  if (error) {
-    return <p className="error-text">{error}</p>;
-  }
+        const t=await user.getIdToken();
+        const r=await fetch(`${apiBaseUrl}/api/audit`,{headers:{Authorization:`Bearer ${t}`}});
+        if(r.ok) setLogs(await r.json());
+      } catch(e){}
+    })();
+  },[apiBaseUrl,user]);
 
   return (
-    <div className="module">
-      <h2>Audit Logs</h2>
-      <ul className="list">
-        {logs.map((log, index) => (
-          <li key={log.id || index}>
-            <span>{log.timestamp}</span>
-            <span>User {log.userId} performed {log.action}</span>
-            <span>{log.details || "No details provided."}</span>
-            {log.tenantId && <span>Tenant: {log.tenantId}</span>}
-          </li>
+    <div style={{height:"100%",display:"flex",flexDirection:"column"}}>
+      <div className="full-panel-head">
+        <div>
+          <div className="full-panel-title">Audit Logs</div>
+          <div className="full-panel-sub">Immutable event log — every action, timestamped</div>
+        </div>
+        <span className="badge b-gray">{logs.length} events</span>
+      </div>
+      <div className="alert alert-red" style={{marginBottom:16}}>GET /api/audit currently returns all users' logs. Add userId scoping before production.</div>
+      <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)",borderRadius:14,overflow:"hidden",flex:1,overflowY:"auto"}}>
+        {logs.map((log,i)=>(
+          <div className="log-row" key={log.id||i}>
+            <div className="log-ts">{new Date(log.timestamp).toLocaleDateString()} {new Date(log.timestamp).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</div>
+            <div className="log-user">{(log.userId||"").split("@")[0]}</div>
+            <div className="log-action">{log.action}<div className="log-detail">{log.details||""}</div></div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,.25)"}}>{log.tenantId||""}</div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

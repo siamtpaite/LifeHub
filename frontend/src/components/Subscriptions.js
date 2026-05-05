@@ -1,168 +1,94 @@
 import React, { useEffect, useState } from "react";
 
-function Subscriptions({ authContext, currency = "INR" }) {
+export default function Subscriptions({ authContext, currency="INR", formOpen, setFormOpen }) {
   const { user, apiBaseUrl } = authContext;
   const [name, setName] = useState("");
   const [cost, setCost] = useState("");
   const [renewalDate, setRenewalDate] = useState("");
   const [items, setItems] = useState([]);
-  const [autoItems, setAutoItems] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const fmt = (v) =>
-    new Intl.NumberFormat(undefined, { style: "currency", currency }).format(Number(v || 0));
+  const fmt = v => new Intl.NumberFormat(undefined,{style:"currency",currency}).format(Number(v||0));
 
-  const loadSubscriptions = async () => {
-    setError("");
+  const load = async () => {
     try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${apiBaseUrl}/api/subscriptions`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to load subscriptions.");
-      setItems(await res.json());
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+      const t = await user.getIdToken();
+      const r = await fetch(`${apiBaseUrl}/api/subscriptions`,{headers:{Authorization:`Bearer ${t}`}});
+      if (!r.ok) throw new Error("Failed to load");
+      setItems(await r.json());
+    } catch(e){ setError(e.message); }
+    finally{ setLoading(false); }
   };
 
-  useEffect(() => {
-    loadSubscriptions();
-  }, []);
+  useEffect(()=>{ load(); },[]);
 
-  const loadAutoSubscriptions = async () => {
-    setError("");
+  const save = async () => {
+    if (!name||!renewalDate) return;
     try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${apiBaseUrl}/api/subscriptions/auto`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const t = await user.getIdToken();
+      const r = await fetch(`${apiBaseUrl}/api/subscriptions`,{
+        method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${t}`},
+        body:JSON.stringify({name,cost,renewalDate}),
       });
-      if (!res.ok) throw new Error("Failed to load auto subscriptions.");
-      setAutoItems(await res.json());
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError("");
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${apiBaseUrl}/api/subscriptions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name, cost, renewalDate }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Failed to create subscription.");
-      }
+      if (!r.ok) { const d=await r.json(); throw new Error(d.message); }
       setName(""); setCost(""); setRenewalDate("");
-      await loadSubscriptions();
-    } catch (err) {
-      setError(err.message);
-    }
+      setFormOpen(false); load();
+    } catch(e){ setError(e.message); }
   };
 
-  const totalMonthly = items.reduce((a, s) => a + Number(s.cost || 0), 0);
+  const total = items.reduce((a,s)=>a+Number(s.cost||0),0);
+  const sc = {"Active":"b-green","Expiring soon":"b-amber","Expired":"b-red"};
+  const getStatus = item => {
+    const diff=(new Date(item.renewalDate)-Date.now())/(1000*60*60*24);
+    return diff<0?"Expired":diff<30?"Expiring soon":"Active";
+  };
 
   return (
-    <div className="module">
-      <h2>Subscriptions</h2>
-      <p>Track every recurring charge. Never get surprised by a renewal again.</p>
+    <>
+      <div className="panel-title">Subscriptions</div>
+      <div className="panel-sub">Track every recurring charge. Never get surprised by a renewal again.</div>
 
-      {/* Stats */}
-      <div className="stats-row">
-        <div className="stat-chip">
-          <div className="stat-label">Monthly total</div>
-          <div className="stat-value">{fmt(totalMonthly)}</div>
+      <div className="stat-row">
+        <div className="stat-chip"><div className="stat-chip-label">Monthly total</div><div className="stat-chip-val accent">{fmt(total)}</div></div>
+        <div className="stat-chip"><div className="stat-chip-label">Active</div><div className="stat-chip-val">{items.length}</div></div>
+        <div className="stat-chip"><div className="stat-chip-label">Annual</div><div className="stat-chip-val">{fmt(total*12)}</div></div>
+      </div>
+
+      <div className={`form-card ${formOpen?"open":""}`}>
+        <div className="form-row">
+          <div className="f-field"><div className="f-label">Service</div><input value={name} placeholder="Netflix, Spotify…" onChange={e=>setName(e.target.value)}/></div>
+          <div className="f-field"><div className="f-label">Cost / mo</div><input type="number" step="0.01" value={cost} placeholder="9.99" onChange={e=>setCost(e.target.value)}/></div>
+          <div className="f-field"><div className="f-label">Renewal date</div><input type="date" value={renewalDate} onChange={e=>setRenewalDate(e.target.value)}/></div>
         </div>
-        <div className="stat-chip">
-          <div className="stat-label">Active</div>
-          <div className="stat-value">{items.length}</div>
-        </div>
-        <div className="stat-chip">
-          <div className="stat-label">Annual estimate</div>
-          <div className="stat-value">{fmt(totalMonthly * 12)}</div>
+        <div className="btn-row">
+          <button className="btn btn-light" onClick={save}>Save</button>
+          <button className="btn btn-ghost" onClick={()=>setFormOpen(false)}>Cancel</button>
         </div>
       </div>
 
-      {/* Add form */}
-      <form className="grid-form" onSubmit={handleSubmit}>
-        <input
-          required
-          value={name}
-          placeholder="Subscription name"
-          onChange={(e) => setName(e.target.value)}
-        />
-        <input
-          required
-          type="number"
-          min="0"
-          step="0.01"
-          value={cost}
-          placeholder="Monthly cost"
-          onChange={(e) => setCost(e.target.value)}
-        />
-        <input
-          required
-          type="date"
-          value={renewalDate}
-          onChange={(e) => setRenewalDate(e.target.value)}
-        />
-        <button type="submit">Add Subscription</button>
-        <button type="button" className="btn-outline" onClick={loadAutoSubscriptions}>
-          Auto-Detect (Stub)
-        </button>
-      </form>
+      <button className="add-btn" onClick={()=>setFormOpen(f=>!f)}>+ Add subscription</button>
 
-      {error && <p className="error-text">{error}</p>}
+      {error && <p style={{color:"#ff5c5c",fontSize:13,marginBottom:8}}>{error}</p>}
 
-      {/* List */}
-      {loading ? (
-        <div className="empty-state">Loading subscriptions…</div>
-      ) : items.length === 0 ? (
-        <div className="empty-state">No subscriptions yet. Add your first one above.</div>
-      ) : (
-        <ul className="data-list">
-          {items.map((item) => (
-            <li key={item.id} className="data-row">
-              <div className="data-row-main">
-                <strong>{item.name}</strong>
-                <span className="data-row-meta">Renews {item.renewalDate}</span>
-              </div>
-              <div className="data-row-right">
-                <span className="data-cost">{fmt(item.cost)}<span className="data-per">/mo</span></span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {autoItems.length > 0 && (
-        <>
-          <h3>Auto-Detected (Stub)</h3>
-          <ul className="data-list">
-            {autoItems.map((item, i) => (
-              <li key={i} className="data-row">
-                <div className="data-row-main">
-                  <strong>{item.name}</strong>
-                  <span className="data-row-meta">Renews {item.renewalDate}</span>
-                </div>
-                <div className="data-row-right">
-                  <span className="data-cost">{fmt(item.cost)}<span className="data-per">/mo</span></span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
+      <div className="data-wrap">
+        {loading ? <p style={{color:"rgba(255,255,255,.4)",fontSize:13}}>Loading…</p> :
+        items.length===0 ? <p style={{color:"rgba(255,255,255,.4)",fontSize:13}}>No subscriptions yet. Add your first one above.</p> :
+        <table className="data-table">
+          <thead><tr><th>Service</th><th>Cost</th><th>Renewal</th><th>Status</th></tr></thead>
+          <tbody>
+            {items.map(item=>{
+              const status=getStatus(item);
+              return <tr key={item.id}>
+                <td><strong>{item.name}</strong></td>
+                <td>{fmt(item.cost)}/mo</td>
+                <td>{item.renewalDate}</td>
+                <td><span className={`badge ${sc[status]||"b-gray"}`}>{status}</span></td>
+              </tr>;
+            })}
+          </tbody>
+        </table>}
+      </div>
+    </>
   );
 }
-
-export default Subscriptions;

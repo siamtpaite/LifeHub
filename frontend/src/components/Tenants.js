@@ -1,98 +1,73 @@
 import React, { useEffect, useState } from "react";
 
-function Tenants({ authContext }) {
+export default function Tenants({ authContext, formOpen, setFormOpen }) {
   const { user, apiBaseUrl } = authContext;
-  const [tenants, setTenants] = useState([]);
   const [name, setName] = useState("");
   const [adminUser, setAdminUser] = useState("");
-  const [error, setError] = useState("");
+  const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const fetchTenants = async () => {
-    setError("");
+  const load = async () => {
     try {
-      const token = await user.getIdToken();
-      const response = await fetch(`${apiBaseUrl}/api/tenants`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        throw new Error("Failed to load tenants.");
-      }
-      const data = await response.json();
-      setTenants(data);
-    } catch (err) {
-      setError(err.message);
-    }
+      const t=await user.getIdToken();
+      const r=await fetch(`${apiBaseUrl}/api/tenants`,{headers:{Authorization:`Bearer ${t}`}});
+      if(r.ok) setTenants(await r.json());
+    } catch(e){ setError(e.message); }
   };
 
-  const handleCreateTenant = async (event) => {
-    event.preventDefault();
-    setError("");
+  useEffect(()=>{ load(); },[]);
+
+  const save = async () => {
+    if (!name) return;
     setLoading(true);
     try {
-      const token = await user.getIdToken();
-      const response = await fetch(`${apiBaseUrl}/api/tenants`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ name, adminUser })
+      const t=await user.getIdToken();
+      const r=await fetch(`${apiBaseUrl}/api/tenants`,{
+        method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${t}`},
+        body:JSON.stringify({name,adminUser}),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to create tenant.");
-      }
-
-      setTenants((prev) => [...prev, data]);
-      setName("");
-      setAdminUser("");
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.message);
+      setName(""); setAdminUser(""); setFormOpen(false); load();
+    } catch(e){ setError(e.message); }
+    finally{ setLoading(false); }
   };
 
-  useEffect(() => {
-    fetchTenants();
-  }, []);
-
   return (
-    <div className="module">
-      <h2>Multi-Tenant Management</h2>
-      <form className="grid-form" onSubmit={handleCreateTenant}>
-        <input
-          required
-          placeholder="Tenant Name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-        />
-        <input
-          placeholder="Admin User ID (optional)"
-          value={adminUser}
-          onChange={(event) => setAdminUser(event.target.value)}
-        />
-        <button type="submit" disabled={loading}>
-          {loading ? "Creating..." : "Create Tenant"}
-        </button>
-      </form>
+    <>
+      <div className="panel-title">Tenants</div>
+      <div className="panel-sub">Create organisations, assign roles, and manage multi-tenant access control.</div>
 
-      {error && <p className="error-text">{error}</p>}
+      <div className={`form-card ${formOpen?"open":""}`}>
+        <div className="form-row">
+          <div className="f-field"><div className="f-label">Organisation name</div><input value={name} placeholder="Acme Corp" onChange={e=>setName(e.target.value)}/></div>
+          <div className="f-field"><div className="f-label">Admin user ID</div><input value={adminUser} placeholder="optional" onChange={e=>setAdminUser(e.target.value)}/></div>
+        </div>
+        <div className="btn-row">
+          <button className="btn btn-light" onClick={save} disabled={loading}>{loading?"Creating…":"Create"}</button>
+          <button className="btn btn-ghost" onClick={()=>setFormOpen(false)}>Cancel</button>
+        </div>
+      </div>
 
-      <h3>Existing Tenants</h3>
-      <ul className="list">
-        {tenants.map((tenant) => (
-          <li key={tenant.id}>
-            <strong>{tenant.name}</strong>
-            <span>Admin: {tenant.adminUser}</span>
-            <span>ID: {tenant.id}</span>
-          </li>
+      {error && <p style={{color:"#ff5c5c",fontSize:13,marginBottom:8}}>{error}</p>}
+
+      <div className="data-wrap">
+        {tenants.map(t=>(
+          <div className="tenant-card" key={t.id}>
+            <div>
+              <div className="tenant-name">{t.name}</div>
+              <div className="tenant-id">{t.id}</div>
+              <div className="tenant-roles">
+                {Object.entries(t.roles||{}).map(([role,users])=>(
+                  <span className="badge b-gray" key={role}>{role}: {Array.isArray(users)?users.length:users}</span>
+                ))}
+              </div>
+            </div>
+            <span className="badge b-green">Active</span>
+          </div>
         ))}
-      </ul>
-    </div>
+      </div>
+    </>
   );
 }
-
-export default Tenants;
