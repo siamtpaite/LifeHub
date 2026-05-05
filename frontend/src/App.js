@@ -6,7 +6,7 @@ import {
   loginWithEmail,
   logout,
   registerWithEmail,
-  signInWithGoogle
+  signInWithGoogle,
 } from "./firebase";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
@@ -26,17 +26,13 @@ function App() {
   }, []);
 
   const authContext = useMemo(
-    () => ({
-      user,
-      apiBaseUrl: API_BASE_URL
-    }),
+    () => ({ user, apiBaseUrl: API_BASE_URL }),
     [user]
   );
 
   const handleEmailAuth = async (event) => {
     event.preventDefault();
     setAuthError("");
-
     try {
       if (isSignup) {
         await registerWithEmail(email, password);
@@ -46,14 +42,23 @@ function App() {
       setEmail("");
       setPassword("");
     } catch (error) {
-      setAuthError(error.message);
+      const messages = {
+        "auth/wrong-password": "Incorrect email or password.",
+        "auth/user-not-found": "Incorrect email or password.",
+        "auth/email-already-in-use": "An account with this email already exists.",
+        "auth/weak-password": "Password must be at least 6 characters.",
+        "auth/invalid-email": "Please enter a valid email address.",
+        "auth/invalid-credential": "Incorrect email or password.",
+      };
+      const code = error.code || "";
+      setAuthError(messages[code] || "Something went wrong. Please try again.");
     }
   };
 
   if (!user) {
     return (
-      <main className="app-shell auth-shell">
-        <section className="card auth-card">
+      <main className="auth-shell">
+        <section className="auth-card">
           <h1>LifeHub</h1>
           <p className="subtitle">ReceiptVault, Subscriptions and Skills in one PWA.</p>
 
@@ -63,7 +68,7 @@ function App() {
               required
               placeholder="Email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <input
               type="password"
@@ -71,7 +76,7 @@ function App() {
               minLength={6}
               placeholder="Password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
             />
             <button type="submit">{isSignup ? "Create Account" : "Sign In"}</button>
           </form>
@@ -82,7 +87,11 @@ function App() {
             </button>
           </div>
 
-          <button className="text-button" type="button" onClick={() => setIsSignup((v) => !v)}>
+          <button
+            className="text-button"
+            type="button"
+            onClick={() => setIsSignup((v) => !v)}
+          >
             {isSignup ? "Already have an account? Sign in" : "New here? Create an account"}
           </button>
 
@@ -93,16 +102,16 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
+    <div className="app-shell">
       <header className="topbar">
-        <div>
-          <h1>LifeHub</h1>
-          <p className="subtitle">Welcome, {user.displayName || user.email}</p>
+        <h1>LifeHub</h1>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <p>Welcome, {user.displayName || user.email}</p>
+          <button onClick={logout} style={{ width: "auto" }}>Sign out</button>
         </div>
-        <button onClick={logout}>Sign out</button>
       </header>
       <Dashboard authContext={authContext} />
-    </main>
+    </div>
   );
 }
 
