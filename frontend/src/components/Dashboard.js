@@ -316,8 +316,8 @@ function SplitPanel({ id, children, onScanClick }) {
   const scan = SCANS[id];
   const scanLabel = SCAN_LABELS[id];
   return (
-    <div style={{ display:"flex", height:"100%" }}>
-      <div className="hero-side" style={{ flex:"0 0 46%" }}>
+    <div style={{ display:"flex", height:"100%", overflow:"hidden" }}>
+      <div className="hero-side" style={{ flex:"0 0 46%", position:"relative" }}>
         <div className="hero-visual">{sphere}</div>
         {scan && scanLabel && (
           <button className="scan-btn" style={{ background:scan }} onClick={onScanClick}>
@@ -325,7 +325,7 @@ function SplitPanel({ id, children, onScanClick }) {
           </button>
         )}
       </div>
-      <div className="content-side" style={{ flex:"1" }}>
+      <div className="content-side" style={{ flex:"1", overflowY:"auto" }}>
         {children}
       </div>
     </div>
@@ -361,7 +361,7 @@ function Dashboard({ authContext }) {
       </aside>
 
       {/* MAIN */}
-      <div className={`card ${theme}`} style={{ position:"relative", overflow:"hidden" }}>
+      <div className={`card ${theme}`} style={{ position:"relative", overflow:"hidden", background:"var(--bg)" }}>
         {/* Slim currency bar */}
         <div style={{ position:"absolute",top:0,left:0,right:0,zIndex:5,padding:"6px 16px",background:"rgba(0,0,0,.2)",borderBottom:"1px solid rgba(255,255,255,.05)",display:"flex",alignItems:"center",gap:8 }}>
           <Localization apiBaseUrl={authContext.apiBaseUrl} onCurrencyChange={setCurrency}/>
