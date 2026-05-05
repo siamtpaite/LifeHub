@@ -19,11 +19,7 @@
   -webkit-font-smoothing: antialiased;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background: var(--bg);
@@ -32,7 +28,7 @@ body {
   overflow: hidden;
 }
 
-/* ── AUTH SCREEN ── */
+/* ── AUTH ── */
 .auth-shell {
   min-height: 100vh;
   display: flex;
@@ -42,8 +38,8 @@ body {
 }
 
 .auth-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
   border-radius: 20px;
   padding: 40px;
   width: min(420px, 90vw);
@@ -55,7 +51,7 @@ body {
   font-weight: 700;
   color: var(--text);
   margin-bottom: 6px;
-  letter-spacing: -0.5px;
+  letter-spacing: -.5px;
 }
 
 .auth-card .subtitle {
@@ -65,26 +61,17 @@ body {
   font-weight: 300;
 }
 
-.auth-form {
+.auth-form, .auth-actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-bottom: 12px;
 }
 
-.auth-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
 /* ── INPUTS ── */
-input,
-textarea,
-select {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+input, textarea, select {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
   border-radius: 10px;
   padding: 10px 14px;
   color: var(--text);
@@ -92,23 +79,15 @@ select {
   font-size: 14px;
   width: 100%;
   outline: none;
-  transition: border 0.15s;
+  transition: border .15s;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: rgba(255, 255, 255, 0.35);
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(255,255,255,.35);
 }
 
-select option {
-  background: #1c1f27;
-}
-
-textarea {
-  resize: vertical;
-  min-height: 70px;
-}
+select option { background: #1c1f27; }
+textarea { resize: vertical; min-height: 70px; }
 
 /* ── BUTTONS ── */
 button {
@@ -119,20 +98,31 @@ button {
   padding: 10px 18px;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.15s;
+  transition: all .15s;
   width: 100%;
 }
 
 button[type="submit"],
 .auth-actions button,
 .auth-form button {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255,255,255,.9);
   color: #111;
 }
 
 button[type="submit"]:hover,
 .auth-actions button:hover {
   background: #fff;
+}
+
+.btn-outline {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  color: var(--text2);
+}
+
+.btn-outline:hover {
+  background: rgba(255,255,255,.1);
+  color: var(--text);
 }
 
 .text-button {
@@ -149,8 +139,8 @@ button[type="submit"]:hover,
   color: var(--red);
   font-size: 13px;
   margin-top: 8px;
-  background: rgba(255, 92, 92, 0.08);
-  border: 1px solid rgba(255, 92, 92, 0.2);
+  background: rgba(255,92,92,.08);
+  border: 1px solid rgba(255,92,92,.2);
   border-radius: 8px;
   padding: 8px 12px;
 }
@@ -181,7 +171,7 @@ button[type="submit"]:hover,
   font-size: 18px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -0.3px;
+  letter-spacing: -.3px;
   padding: 0 20px;
 }
 
@@ -192,7 +182,7 @@ button[type="submit"]:hover,
 }
 
 .topbar button {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255,255,255,.07);
   border: 1px solid var(--border2);
   color: var(--text2);
   border-radius: 8px;
@@ -219,7 +209,6 @@ button[type="submit"]:hover,
   overflow-x: hidden;
 }
 
-/* ── TABS (repurposed as sidebar nav) ── */
 .tabs {
   display: flex;
   flex-direction: column;
@@ -240,20 +229,18 @@ button[type="submit"]:hover,
   align-items: center;
   justify-content: center;
   border: none;
-  transition: all 0.15s;
+  transition: all .15s;
   position: relative;
 }
 
 .tabs button:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255,255,255,.07);
   color: var(--text2);
 }
 
-.tabs button.active {
-  color: #fff;
-}
+.tabs button.active { color: #fff; }
 
-/* ── MAIN CONTENT AREA ── */
+/* ── MAIN CARD ── */
 .card {
   background: transparent;
   overflow: hidden;
@@ -267,19 +254,21 @@ button[type="submit"]:hover,
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 20px;
+  padding: 6px 20px;
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  background: rgba(255,255,255,.02);
   flex-shrink: 0;
 }
 
 .localization-bar label {
   font-size: 12px;
   color: var(--text3);
+  white-space: nowrap;
 }
 
 .localization-bar select {
   width: auto;
+  max-width: 240px;
   padding: 4px 10px;
   font-size: 12px;
   border-radius: 6px;
@@ -289,38 +278,79 @@ button[type="submit"]:hover,
 .module {
   flex: 1;
   overflow-y: auto;
-  padding: 28px 32px;
+  padding: 32px 40px;
+  max-width: 860px;
 }
 
 .module h2 {
-  font-size: 32px;
+  font-size: 34px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -0.5px;
+  letter-spacing: -.5px;
   margin-bottom: 6px;
+  line-height: 1.1;
+}
+
+.module > p {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 24px;
+  font-weight: 300;
+  line-height: 1.6;
 }
 
 .module h3 {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text);
-  margin: 20px 0 10px;
+  margin: 24px 0 12px;
 }
 
 .module h4 {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text2);
-  margin-bottom: 8px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 10px;
 }
 
-.module > p,
-.module .subtitle {
-  font-size: 14px;
+.subtitle {
+  font-size: 13px;
   color: var(--text2);
-  margin-bottom: 20px;
-  font-weight: 300;
-  line-height: 1.6;
+  margin: 4px 0 12px;
+}
+
+/* ── STAT CHIPS ── */
+.stats-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 20px;
+  min-width: 130px;
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
 }
 
 /* ── GRID FORM ── */
@@ -328,30 +358,102 @@ button[type="submit"]:hover,
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin-bottom: 16px;
-  background: rgba(255, 255, 255, 0.04);
+  margin-bottom: 20px;
+  background: rgba(255,255,255,.03);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 16px;
+  max-width: 600px;
 }
 
-.grid-form button {
+.grid-form button[type="submit"] {
   grid-column: span 2;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255,255,255,.9);
   color: #111;
-  width: 100%;
 }
 
-.grid-form button:hover {
-  background: #fff;
+.grid-form button[type="submit"]:hover { background: #fff; }
+
+.grid-form .btn-outline {
+  grid-column: span 2;
 }
 
 .grid-form textarea,
-.grid-form input[type="file"] {
+.grid-form input[type="file"],
+.grid-form input[type="date"] {
   grid-column: span 2;
 }
 
-/* ── LIST ── */
+/* ── DATA LIST ── */
+.data-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.data-row {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: background .15s;
+}
+
+.data-row:hover { background: rgba(255,255,255,.07); }
+
+.data-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.data-row-main strong {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.data-row-meta {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.data-row-right { flex-shrink: 0; }
+
+.data-cost {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.data-per {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text3);
+  margin-left: 2px;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--text3);
+  font-size: 14px;
+  background: rgba(255,255,255,.02);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  margin-top: 8px;
+}
+
+/* ── OLD LIST (fallback for unchanged components) ── */
 .list {
   list-style: none;
   display: flex;
@@ -360,7 +462,7 @@ button[type="submit"]:hover,
 }
 
 .list li {
-  background: var(--surface);
+  background: rgba(255,255,255,.04);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 16px;
@@ -368,12 +470,10 @@ button[type="submit"]:hover,
   gap: 4px;
   font-size: 13px;
   color: var(--text2);
-  transition: background 0.15s;
+  transition: background .15s;
 }
 
-.list li:hover {
-  background: var(--surface2);
-}
+.list li:hover { background: rgba(255,255,255,.07); }
 
 .list li strong {
   color: var(--text);
@@ -381,38 +481,20 @@ button[type="submit"]:hover,
   font-size: 14px;
 }
 
-.list li a {
-  color: var(--blue);
-  font-size: 12px;
-}
+.list li a { color: var(--blue); font-size: 12px; }
 
 /* ── BADGE BOX ── */
 .badge-box {
-  background: var(--surface);
+  background: rgba(255,255,255,.03);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px;
   margin-top: 16px;
-}
-
-.badge-box h4 {
-  font-size: 12px;
-  color: var(--text3);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 10px;
-}
-
-.badge-box p {
-  font-size: 14px;
-  color: var(--text2);
-  margin-bottom: 6px !important;
+  max-width: 400px;
 }
 
 /* ── RECALL GROUP ── */
-.recall-group {
-  margin-bottom: 16px;
-}
+.recall-group { margin-bottom: 16px; }
 
 .recall-group h4 {
   font-size: 14px;
@@ -424,22 +506,6 @@ button[type="submit"]:hover,
 }
 
 /* ── SCROLLBAR ── */
-::-webkit-scrollbar {
-  width: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border2);
-  border-radius: 4px;
-}
-
-/* ── RESPONSIVE ── */
-@media (min-width: 768px) {
-  .grid-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }

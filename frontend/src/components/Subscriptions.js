@@ -8,38 +8,41 @@ function Subscriptions({ authContext, currency = "INR" }) {
   const [items, setItems] = useState([]);
   const [autoItems, setAutoItems] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const fmt = (v) =>
+    new Intl.NumberFormat(undefined, { style: "currency", currency }).format(Number(v || 0));
 
   const loadSubscriptions = async () => {
     setError("");
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`${apiBaseUrl}/api/subscriptions`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetch(`${apiBaseUrl}/api/subscriptions`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) {
-        throw new Error("Failed to load subscriptions.");
-      }
-      setItems(await response.json());
+      if (!res.ok) throw new Error("Failed to load subscriptions.");
+      setItems(await res.json());
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     loadSubscriptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadAutoSubscriptions = async () => {
     setError("");
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`${apiBaseUrl}/api/subscriptions/auto`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetch(`${apiBaseUrl}/api/subscriptions/auto`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) {
-        throw new Error("Failed to load auto subscriptions.");
-      }
-      setAutoItems(await response.json());
+      if (!res.ok) throw new Error("Failed to load auto subscriptions.");
+      setAutoItems(await res.json());
     } catch (err) {
       setError(err.message);
     }
@@ -50,69 +53,110 @@ function Subscriptions({ authContext, currency = "INR" }) {
     setError("");
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`${apiBaseUrl}/api/subscriptions`, {
+      const res = await fetch(`${apiBaseUrl}/api/subscriptions`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ name, cost, renewalDate })
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name, cost, renewalDate }),
       });
-      if (!response.ok) {
-        const data = await response.json();
+      if (!res.ok) {
+        const data = await res.json();
         throw new Error(data.message || "Failed to create subscription.");
       }
-      setName("");
-      setCost("");
-      setRenewalDate("");
+      setName(""); setCost(""); setRenewalDate("");
       await loadSubscriptions();
     } catch (err) {
       setError(err.message);
     }
   };
 
-  const formatCurrency = (value) =>
-    new Intl.NumberFormat(undefined, { style: "currency", currency }).format(Number(value || 0));
+  const totalMonthly = items.reduce((a, s) => a + Number(s.cost || 0), 0);
 
   return (
     <div className="module">
       <h2>Subscriptions</h2>
+      <p>Track every recurring charge. Never get surprised by a renewal again.</p>
+
+      {/* Stats */}
+      <div className="stats-row">
+        <div className="stat-chip">
+          <div className="stat-label">Monthly total</div>
+          <div className="stat-value">{fmt(totalMonthly)}</div>
+        </div>
+        <div className="stat-chip">
+          <div className="stat-label">Active</div>
+          <div className="stat-value">{items.length}</div>
+        </div>
+        <div className="stat-chip">
+          <div className="stat-label">Annual estimate</div>
+          <div className="stat-value">{fmt(totalMonthly * 12)}</div>
+        </div>
+      </div>
+
+      {/* Add form */}
       <form className="grid-form" onSubmit={handleSubmit}>
-        <input required value={name} placeholder="Subscription name" onChange={(event) => setName(event.target.value)} />
+        <input
+          required
+          value={name}
+          placeholder="Subscription name"
+          onChange={(e) => setName(e.target.value)}
+        />
         <input
           required
           type="number"
           min="0"
           step="0.01"
           value={cost}
-          placeholder="Monthly/annual cost"
-          onChange={(event) => setCost(event.target.value)}
+          placeholder="Monthly cost"
+          onChange={(e) => setCost(e.target.value)}
         />
-        <input required type="date" value={renewalDate} onChange={(event) => setRenewalDate(event.target.value)} />
+        <input
+          required
+          type="date"
+          value={renewalDate}
+          onChange={(e) => setRenewalDate(e.target.value)}
+        />
         <button type="submit">Add Subscription</button>
-        <button type="button" onClick={loadAutoSubscriptions}>
-          Auto-Fetch Subscriptions (Stub)
+        <button type="button" className="btn-outline" onClick={loadAutoSubscriptions}>
+          Auto-Detect (Stub)
         </button>
       </form>
+
       {error && <p className="error-text">{error}</p>}
 
-      <ul className="list">
-        {items.map((item) => (
-          <li key={item.id}>
-            <strong>{item.name}</strong>
-            <span>{formatCurrency(item.cost)} | Renews on {item.renewalDate}</span>
-          </li>
-        ))}
-      </ul>
+      {/* List */}
+      {loading ? (
+        <div className="empty-state">Loading subscriptions…</div>
+      ) : items.length === 0 ? (
+        <div className="empty-state">No subscriptions yet. Add your first one above.</div>
+      ) : (
+        <ul className="data-list">
+          {items.map((item) => (
+            <li key={item.id} className="data-row">
+              <div className="data-row-main">
+                <strong>{item.name}</strong>
+                <span className="data-row-meta">Renews {item.renewalDate}</span>
+              </div>
+              <div className="data-row-right">
+                <span className="data-cost">{fmt(item.cost)}<span className="data-per">/mo</span></span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {autoItems.length > 0 && (
         <>
-          <h3>Auto-Tracked (API Stub)</h3>
-          <ul className="list">
-            {autoItems.map((item, idx) => (
-              <li key={`${item.name}-${idx}`}>
-                <strong>{item.name}</strong>
-                <span>{formatCurrency(item.cost)} | Renews on {item.renewalDate}</span>
+          <h3>Auto-Detected (Stub)</h3>
+          <ul className="data-list">
+            {autoItems.map((item, i) => (
+              <li key={i} className="data-row">
+                <div className="data-row-main">
+                  <strong>{item.name}</strong>
+                  <span className="data-row-meta">Renews {item.renewalDate}</span>
+                </div>
+                <div className="data-row-right">
+                  <span className="data-cost">{fmt(item.cost)}<span className="data-per">/mo</span></span>
+                </div>
               </li>
             ))}
           </ul>
