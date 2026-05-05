@@ -1,0 +1,7 @@
+marketplaceIntegration:
+  providers:
+    - awsMarketplace
+    - azureMarketplace
+    - gcpMarketplace
+  billing: native
+  listing: automated

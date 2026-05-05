@@ -1,0 +1,5 @@
+threatDetection:
+  anomalies:
+    - trafficSpike: throttle
+    - maliciousIP: block
+    - credentialStuffing: lockAccount

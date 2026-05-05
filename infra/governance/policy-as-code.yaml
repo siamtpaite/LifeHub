@@ -1,0 +1,6 @@
+policies:
+  tenantIsolation: enforced
+  encryption: AES256
+  backupRetention: 30d
+  auditLogging: mandatory
+  rbac: strict

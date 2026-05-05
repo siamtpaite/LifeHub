@@ -1,0 +1,10 @@
+trafficManager:
+  provider: azure
+  routingMethod: performance
+  endpoints:
+    - name: asia
+      target: asia-south1.lifehub.example.com
+    - name: us
+      target: us-east-1.lifehub.example.com
+    - name: europe
+      target: europe-west1.lifehub.example.com

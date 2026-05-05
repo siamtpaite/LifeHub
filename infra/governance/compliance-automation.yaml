@@ -1,0 +1,8 @@
+complianceAutomation:
+  checks:
+    - gdpr
+    - iso27001
+    - soc2
+    - pci-dss
+  pipelineIntegration: true
+  alerts: slack

@@ -1,0 +1,15 @@
+backend:
+  image: registry.example.com/lifehub-backend:latest
+  replicas: 3
+  servicePort: 80
+  containerPort: 5000
+
+frontend:
+  image: registry.example.com/lifehub-frontend:latest
+  replicas: 2
+  servicePort: 80
+  containerPort: 80
+
+ingress:
+  enabled: true
+  host: lifehub.example.com

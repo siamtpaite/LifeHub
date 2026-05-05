@@ -1,0 +1,9 @@
+backupPolicy:
+  frequency: daily
+  retention: 30d
+  storage: s3://lifehub-backups
+  encryption: AES256
+  replication:
+    - region: asia-south1
+    - region: us-east-1
+    - region: europe-west1

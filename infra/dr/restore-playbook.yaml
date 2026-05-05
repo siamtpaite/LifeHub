@@ -1,0 +1,8 @@
+restorePlaybook:
+  steps:
+    - stop: affected services
+    - fetch: latest backup from nearest region
+    - decrypt: using KMS key
+    - restore: database + configs
+    - validate: integrity checks
+    - restart: services

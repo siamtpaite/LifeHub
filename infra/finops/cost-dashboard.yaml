@@ -1,0 +1,8 @@
+costDashboard:
+  panels:
+    - name: Monthly Cloud Spend
+      source: cloud-billing
+    - name: Service Cost Breakdown
+      source: kubernetes-cost-analyzer
+    - name: Savings Opportunities
+      source: aiops

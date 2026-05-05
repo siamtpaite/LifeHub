@@ -1,0 +1,8 @@
+opsDashboard:
+  panels:
+    - name: Predictive Scaling Forecast
+      source: prometheus
+    - name: Self-Healing Actions
+      source: kubernetes-events
+    - name: Anomaly Alerts
+      source: grafana

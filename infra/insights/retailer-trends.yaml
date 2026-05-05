@@ -1,0 +1,6 @@
+retailerTrends:
+  anonymizedData: true
+  insights:
+    - productLifecycle
+    - recallImpact
+    - warrantyClaims

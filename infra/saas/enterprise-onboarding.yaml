@@ -1,0 +1,6 @@
+onboardingWorkflow:
+  steps:
+    - tenantProvisioning
+    - roleAssignment
+    - billingSetup
+    - complianceCheck

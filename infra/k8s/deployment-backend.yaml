@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lifehub-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: lifehub-backend
+  template:
+    metadata:
+      labels:
+        app: lifehub-backend
+    spec:
+      containers:
+        - name: backend
+          image: registry.example.com/lifehub-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "5000"

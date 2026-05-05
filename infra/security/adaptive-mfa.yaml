@@ -1,0 +1,6 @@
+adaptiveMFA:
+  enabled: true
+  triggers:
+    - unusualLocation
+    - highRiskDevice
+    - failedAttempts > 3

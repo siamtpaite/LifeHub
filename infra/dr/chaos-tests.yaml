@@ -1,0 +1,11 @@
+chaosTests:
+  scenarios:
+    - name: kill-backend-pod
+      action: delete pod
+      expected: auto-recovery via Kubernetes
+    - name: db-failure
+      action: simulate outage
+      expected: failover to replica
+    - name: region-outage
+      action: block traffic
+      expected: reroute via traffic manager

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lifehub-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: lifehub-frontend
+  template:
+    metadata:
+      labels:
+        app: lifehub-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: registry.example.com/lifehub-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80

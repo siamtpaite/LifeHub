@@ -1,0 +1,6 @@
+subscriptionForecasting:
+  model: ARIMA
+  horizon: 6m
+  outputs:
+    - renewalRate
+    - revenueProjection

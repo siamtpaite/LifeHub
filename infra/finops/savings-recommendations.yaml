@@ -1,0 +1,5 @@
+savingsRecommendations:
+  - useReservedInstances: for backend pods
+  - enableSpotInstances: for batch jobs
+  - autoShutdown: dev environments after 8pm
+  - optimizeStorage: move cold data to cheaper tier

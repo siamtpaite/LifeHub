@@ -1,0 +1,5 @@
+dataRetention:
+  userData: 365d
+  logs: 90d
+  recalls: 730d
+  deletionPolicy: automated

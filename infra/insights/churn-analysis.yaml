@@ -1,0 +1,9 @@
+churnAnalysis:
+  model: logisticRegression
+  features:
+    - usageFrequency
+    - paymentDelays
+    - supportTickets
+  actions:
+    - sendRetentionOffer
+    - escalateToManager

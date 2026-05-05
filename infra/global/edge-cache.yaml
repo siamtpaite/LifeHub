@@ -1,0 +1,7 @@
+edgeCache:
+  enabled: true
+  strategy: "stale-while-revalidate"
+  regions:
+    - asia
+    - europe
+    - us

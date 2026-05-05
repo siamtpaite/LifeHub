@@ -1,0 +1,10 @@
+cdn:
+  provider: cloudflare
+  rules:
+    - path: "/*"
+      cache: true
+      edge_ttl: 3600
+      origin: lifehub-frontend-service
+    - path: "/api/*"
+      cache: false
+      origin: lifehub-backend-service

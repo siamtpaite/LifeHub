@@ -1,0 +1,6 @@
+accessControl:
+  roles:
+    - admin: full
+    - manager: limited
+    - viewer: read-only
+  enforcement: leastPrivilege

@@ -1,0 +1,9 @@
+selfHealing:
+  enabled: true
+  rules:
+    - condition: podCrashLoop
+      action: restartPod
+    - condition: nodeFailure
+      action: reschedulePods
+    - condition: serviceUnhealthy
+      action: rerouteTraffic

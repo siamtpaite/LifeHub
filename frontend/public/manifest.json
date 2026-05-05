@@ -1,0 +1,18 @@
+{
+  "short_name": "LifeHub",
+  "name": "LifeHub - Save, Track and Exchange",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#f8fafc",
+  "description": "Track warranties, subscriptions, and exchange skills.",
+  "orientation": "portrait-primary"
+}

@@ -1,0 +1,8 @@
+budgetPolicies:
+  monthlyLimit: 5000 USD
+  alerts:
+    - channel: slack
+    - channel: email
+  actions:
+    - scaleDownNonCritical: if spend > 80% of budget
+    - freezeNewDeployments: if spend > 100% of budget

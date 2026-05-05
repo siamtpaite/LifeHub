@@ -1,0 +1,11 @@
+predictiveScaling:
+  enabled: true
+  metrics:
+    - cpu
+    - memory
+    - request_rate
+  model: ARIMA
+  horizon: 15m
+  actions:
+    - scaleUp: if forecast > 80% utilization
+    - scaleDown: if forecast < 30% utilization

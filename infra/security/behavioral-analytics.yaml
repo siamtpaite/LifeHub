@@ -1,0 +1,5 @@
+behavioralAnalytics:
+  loginPatterns:
+    baseline: normal
+    anomaly: alert
+  sessionMonitoring: continuous

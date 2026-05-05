@@ -1,0 +1,10 @@
+slaMonitor:
+  uptimeTarget: 99.9%
+  responseTimeTarget: 200ms
+  alerting:
+    - channel: pagerduty
+    - channel: slack
+  escalation:
+    - tier1: on-call engineer
+    - tier2: SRE team
+    - tier3: CTO

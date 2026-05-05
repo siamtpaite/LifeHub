@@ -1,0 +1,11 @@
+anomalyDetection:
+  enabled: true
+  algorithms:
+    - isolationForest
+    - zScore
+  alerts:
+    - channel: pagerduty
+    - channel: slack
+  autoMitigation:
+    - throttleRequests: if anomaly == trafficSpike
+    - blockIP: if anomaly == maliciousActivity

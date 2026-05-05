@@ -1,0 +1,5 @@
+apiGatewayPolicies:
+  rateLimit: 1000/min
+  jwtValidation: required
+  ipBlocklist: enabled
+  ddosProtection: enabled

@@ -1,0 +1,10 @@
+regions:
+  - name: asia-south1
+    provider: gcp
+    replicas: 3
+  - name: us-east-1
+    provider: aws
+    replicas: 3
+  - name: europe-west1
+    provider: gcp
+    replicas: 2

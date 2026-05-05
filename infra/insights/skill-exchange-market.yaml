@@ -1,0 +1,6 @@
+skillExchangeMarket:
+  matchingAlgorithm: collaborativeFiltering
+  features:
+    - skillDemand
+    - skillSupply
+    - pricing

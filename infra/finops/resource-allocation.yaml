@@ -1,0 +1,9 @@
+resourceAllocation:
+  strategy: "bin-packing"
+  priorities:
+    - criticalServices: high
+    - analytics: medium
+    - testEnvironments: low
+  autoAdjust:
+    - move workloads to cheaper nodes
+    - consolidate underutilized pods
