@@ -4,6 +4,11 @@
       "entrypoint": "frontend",
       "buildCommand": "npm run build",
       "mount": "/"
+    },
+    "backend": {
+      "entrypoint": "backend",
+      "buildCommand": "npm install",
+      "mount": "/api"
     }
   }
 }
