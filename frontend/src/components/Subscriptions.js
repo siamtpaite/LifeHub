@@ -31,7 +31,6 @@ function Subscriptions({ authContext, currency = "INR" }) {
 
   useEffect(() => {
     loadSubscriptions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadAutoSubscriptions = async () => {
