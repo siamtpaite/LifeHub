@@ -13,6 +13,8 @@ import Audit from "./Audit";
 import Security from "./Security";
 import Auth from "./Auth";
 import Localization from "./Localization";
+import AIAdvisor from "./AIAdvisor";
+import SkillsChat from "./SkillsChat";
 
 /* ── SVG SPHERES per panel ── */
 const GreenSphere = () => (
@@ -274,6 +276,9 @@ const NAV = [
   { id:"security", label:"Security", glow:"linear-gradient(135deg,#059669,#34d399)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> },
   { id:"monetisation", label:"Subscription", glow:"linear-gradient(135deg,#92400e,#f59e0b)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M9 9h4.5a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3H15"/></svg> },
   { id:"auth", label:"Auth", glow:"linear-gradient(135deg,#7e22ce,#c084fc)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M14 12H3"/></svg> },
+  { sep:true },
+  { id:"ai-advisor", label:"AI Advisor", glow:"linear-gradient(135deg,#4c1d95,#a78bfa)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 16v-4M12 8h.01"/></svg> },
+  { id:"skills-chat", label:"Skills Chat", glow:"linear-gradient(135deg,#0f766e,#2dd4bf)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
 ];
 
 const SPHERES = {
@@ -281,6 +286,7 @@ const SPHERES = {
   savings:<AmberSphere/>, analytics:<SkySphere/>, predictions:<PinkSphere/>,
   recalls:<RedSphere/>, enterprise:<IndigoSphere/>, tenants:<TealSphere/>,
   audit:null, security:<EmeraldSphere/>, monetisation:<GoldSphere/>, auth:<PurpleSphere/>,
+  "ai-advisor":<VioletSphere/>, "skills-chat":null,
 };
 
 const THEMES = {
@@ -288,6 +294,7 @@ const THEMES = {
   savings:"theme-amber", analytics:"theme-sky", predictions:"theme-pink",
   recalls:"theme-red", enterprise:"theme-indigo", tenants:"theme-teal",
   audit:"theme-slate", security:"theme-emerald", monetisation:"theme-gold", auth:"theme-purple",
+  "ai-advisor":"theme-violet", "skills-chat":"theme-teal",
 };
 
 const SCANS = {
@@ -434,6 +441,16 @@ function Dashboard({ authContext }) {
             <SplitPanel id="auth">
               <Auth authContext={authContext}/>
             </SplitPanel>
+          )}
+          {tab === "ai-advisor" && (
+            <SplitPanel id="ai-advisor">
+              <AIAdvisor authContext={authContext} currency={currency}/>
+            </SplitPanel>
+          )}
+          {tab === "skills-chat" && (
+            <div className="full-panel theme-teal" style={{ padding:0 }}>
+              <SkillsChat authContext={authContext}/>
+            </div>
           )}
         </div>
       </div>
