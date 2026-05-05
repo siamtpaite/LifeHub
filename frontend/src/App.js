@@ -6,7 +6,6 @@ import {
   loginWithEmail,
   logout,
   registerWithEmail,
-  signInWithApple,
   signInWithGoogle
 } from "./firebase";
 
@@ -80,9 +79,6 @@ function App() {
           <div className="auth-actions">
             <button type="button" onClick={() => signInWithGoogle()}>
               Continue with Google
-            </button>
-            <button type="button" onClick={() => signInWithApple()}>
-              Continue with Apple
             </button>
           </div>
 
