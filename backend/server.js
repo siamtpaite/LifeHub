@@ -15,6 +15,7 @@ const tenants = require("./routes/tenants");
 const audit = require("./routes/audit");
 const security = require("./routes/security");
 const auth = require("./routes/auth");
+const aiAdvisor = require("./routes/ai-advisor");
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.use("/api/tenants", tenants);
 app.use("/api/audit", audit);
 app.use("/api/security", security);
 app.use("/api/auth", auth);
+app.use("/api/ai", aiAdvisor);
 
 const PORT = process.env.PORT || 5000;
 
