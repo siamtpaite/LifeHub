@@ -64,6 +64,34 @@ export default function AIAdvisor({ authContext, currency = "INR" }) {
 
     try {
       const t = await user.getIdToken();
+
+      // If userData not loaded yet, load it now before sending
+      let context = userData;
+      if (!context) {
+        try {
+          const headers = { Authorization: `Bearer ${t}` };
+          const [subs, wars, skills, savings, recalls, predictions] = await Promise.allSettled([
+            fetch(`${apiBaseUrl}/api/subscriptions`, { headers }).then(r => r.json()),
+            fetch(`${apiBaseUrl}/api/warranties`, { headers }).then(r => r.json()),
+            fetch(`${apiBaseUrl}/api/skills`, { headers }).then(r => r.json()),
+            fetch(`${apiBaseUrl}/api/savings`, { headers }).then(r => r.json()),
+            fetch(`${apiBaseUrl}/api/recalls`, { headers }).then(r => r.json()),
+            fetch(`${apiBaseUrl}/api/predictions`, { headers }).then(r => r.json()),
+          ]);
+          context = {
+            subscriptions: subs.status === "fulfilled" ? subs.value : [],
+            warranties: wars.status === "fulfilled" ? wars.value : [],
+            skills: skills.status === "fulfilled" ? skills.value : [],
+            savings: savings.status === "fulfilled" ? savings.value : {},
+            recalls: recalls.status === "fulfilled" ? recalls.value : {},
+            predictions: predictions.status === "fulfilled" ? predictions.value : {},
+            currency,
+            user: { email: user.email, name: user.displayName },
+          };
+          setUserData(context);
+        } catch (e) {}
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/ai/chat`, {
         method: "POST",
         headers: {
@@ -72,7 +100,7 @@ export default function AIAdvisor({ authContext, currency = "INR" }) {
         },
         body: JSON.stringify({
           messages: newMessages,
-          userData,
+          userData: context,
         }),
       });
 
