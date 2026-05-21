@@ -323,16 +323,25 @@ function SplitPanel({ id, children, onScanClick }) {
   const scan = SCANS[id];
   const scanLabel = SCAN_LABELS[id];
   return (
-    <div style={{ display:"flex", height:"100%", overflow:"hidden" }}>
-      <div className="hero-side" style={{ flex:"0 0 46%", position:"relative" }}>
-        <div className="hero-visual">{sphere}</div>
+    <div style={{ display:"flex", height:"100%", overflow:"hidden", width:"100%" }}>
+      <div style={{
+        flex:"0 0 44%", position:"relative",
+        display:"flex", alignItems:"center", justifyContent:"center",
+        padding:"40px 20px 80px",
+      }}>
+        <div>{sphere}</div>
         {scan && scanLabel && (
           <button className="scan-btn" style={{ background:scan }} onClick={onScanClick}>
             {scanLabel}
           </button>
         )}
       </div>
-      <div className="content-side" style={{ flex:"1", overflowY:"auto" }}>
+      <div style={{
+        flex:"1", overflowY:"auto",
+        padding:"40px 48px 80px 8px",
+        display:"flex", flexDirection:"column",
+        minWidth:0,
+      }}>
         {children}
       </div>
     </div>
@@ -368,14 +377,14 @@ function Dashboard({ authContext }) {
       </aside>
 
       {/* MAIN */}
-      <div className={`card ${theme}`} style={{ position:"relative", overflow:"hidden", background:"var(--bg)" }}>
+      <div className={`card ${theme}`} style={{ position:"relative", overflow:"hidden" }}>
         {/* Slim currency bar */}
         <div style={{ position:"absolute",top:0,left:0,right:0,zIndex:5,padding:"6px 16px",background:"rgba(0,0,0,.2)",borderBottom:"1px solid rgba(255,255,255,.05)",display:"flex",alignItems:"center",gap:8 }}>
           <Localization apiBaseUrl={authContext.apiBaseUrl} onCurrencyChange={setCurrency}/>
         </div>
 
         {/* Panels */}
-        <div style={{ position:"absolute",inset:0,paddingTop:36,overflow:"hidden" }}>
+        <div style={{ position:"absolute", inset:0, paddingTop:36, overflow:"hidden", display:"flex", flexDirection:"column" }}>
 
           {tab === "subscriptions" && (
             <SplitPanel id="subscriptions" onScanClick={() => setFormOpen(f => !f)}>

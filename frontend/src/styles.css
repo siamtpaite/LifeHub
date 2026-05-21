@@ -336,3 +336,51 @@ button{font-family:'Inter',sans-serif;cursor:pointer}
 .theme-emerald{--bg:radial-gradient(ellipse at 28% 55%,#062a18 0%,#03140c 60%,#010a05 100%);--accent:#34d399;--scan:radial-gradient(circle at 40% 35%,#34d399,#059669)}
 .theme-gold{--bg:radial-gradient(ellipse at 28% 55%,#3d2800 0%,#1a1000 60%,#0d0700 100%);--accent:#f59e0b;--scan:radial-gradient(circle at 40% 35%,#f59e0b,#92400e)}
 .theme-purple{--bg:radial-gradient(ellipse at 28% 55%,#1a0d30 0%,#0c0618 60%,#05030c 100%);--accent:#c084fc;--scan:radial-gradient(circle at 40% 35%,#c084fc,#7e22ce)}
+
+/* ── PANEL BACKGROUNDS (fix for inline style limitation) ── */
+.card.theme-green  { background: radial-gradient(ellipse at 28% 55%,#093d2c 0%,#041a12 60%,#020e09 100%) }
+.card.theme-blue   { background: radial-gradient(ellipse at 28% 55%,#0d1f5c 0%,#060f30 60%,#020618 100%) }
+.card.theme-violet { background: radial-gradient(ellipse at 28% 55%,#2d0d6b 0%,#160638 60%,#0a021e 100%) }
+.card.theme-amber  { background: radial-gradient(ellipse at 28% 55%,#4a2800 0%,#201200 60%,#100900 100%) }
+.card.theme-sky    { background: radial-gradient(ellipse at 28% 55%,#0f1f3d 0%,#060e1e 60%,#020610 100%) }
+.card.theme-pink   { background: radial-gradient(ellipse at 28% 55%,#4a0d3a 0%,#220619 60%,#10020c 100%) }
+.card.theme-red    { background: radial-gradient(ellipse at 28% 55%,#4a0808 0%,#220404 60%,#100202 100%) }
+.card.theme-indigo { background: radial-gradient(ellipse at 28% 55%,#0a1a3a 0%,#050d1e 60%,#020610 100%) }
+.card.theme-teal   { background: radial-gradient(ellipse at 28% 55%,#063030 0%,#031818 60%,#010c0c 100%) }
+.card.theme-slate  { background: radial-gradient(ellipse at 28% 55%,#1a1a28 0%,#0d0d18 60%,#060610 100%) }
+.card.theme-emerald{ background: radial-gradient(ellipse at 28% 55%,#062a18 0%,#03140c 60%,#010a05 100%) }
+.card.theme-gold   { background: radial-gradient(ellipse at 28% 55%,#3d2800 0%,#1a1000 60%,#0d0700 100%) }
+.card.theme-purple { background: radial-gradient(ellipse at 28% 55%,#1a0d30 0%,#0c0618 60%,#05030c 100%) }
+
+/* ── FULL PANEL BACKGROUNDS ── */
+.full-panel.theme-slate  { background: radial-gradient(ellipse at 28% 55%,#1a1a28 0%,#0d0d18 60%,#060610 100%) }
+.full-panel.theme-teal   { background: radial-gradient(ellipse at 28% 55%,#063030 0%,#031818 60%,#010c0c 100%) }
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 768px) {
+  .app-shell, div[style*="gridTemplateColumns"] {
+    grid-template-columns: 52px 1fr !important;
+  }
+  .sidebar { padding: 8px 0; }
+  .nav-item, .tabs button { width: 38px; height: 38px; }
+  .hero-side { display: none !important; }
+  .content-side {
+    padding: 24px 20px 80px !important;
+    flex: 1 !important;
+    width: 100% !important;
+  }
+  .panel-title { font-size: 28px !important; }
+  .panel-sub { font-size: 13px !important; }
+  .stat-row { gap: 8px; }
+  .stat-chip { min-width: 80px; padding: 10px 12px; }
+  .stat-chip-val { font-size: 18px !important; }
+  .plan-grid { grid-template-columns: 1fr !important; }
+  .data-table th, .data-table td { padding: 8px 10px; font-size: 12px; }
+  .scan-btn { display: none; }
+}
+
+@media (max-width: 480px) {
+  .localization-bar select { max-width: 160px; }
+  .full-panel { padding: 20px 16px; }
+  .full-panel-title { font-size: 26px; }
+}
