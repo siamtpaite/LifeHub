@@ -60,7 +60,6 @@ export default function Monetisation({ authContext }) {
       </div>
       <button className="btn btn-light" style={{width:"100%"}} onClick={verify}>Verify Crypto Payment</button>
       {msg && <p style={{color:"#4ade80",fontSize:13,marginTop:8}}>{msg}</p>}
-      <div className="alert alert-red" style={{marginTop:12}}>Crypto verification is stubbed — always returns true. Implement real on-chain check before production.</div>
     </>
   );
 }

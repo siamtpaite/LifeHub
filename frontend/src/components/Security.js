@@ -4,59 +4,70 @@ export default function Security({ authContext }) {
   const { user, apiBaseUrl } = authContext;
   const [input, setInput] = useState("");
   const [encrypted, setEncrypted] = useState(null);
-  const [decrypted, setDecrypted] = useState(null);
   const [error, setError] = useState("");
 
   const encrypt = async () => {
-    setError(""); setDecrypted(null);
+    setError(""); setEncrypted(null);
     try {
-      const t=await user.getIdToken();
-      const r=await fetch(`${apiBaseUrl}/api/security/encrypt`,{
-        method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${t}`},
-        body:JSON.stringify({data:input}),
+      const t = await user.getIdToken();
+      const r = await fetch(`${apiBaseUrl}/api/security/encrypt`, {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ data: input }),
       });
-      const d=await r.json();
-      if(!r.ok) throw new Error(d.message);
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.message);
       setEncrypted(d);
-    } catch(e){ setError(e.message); }
-  };
-
-  const decrypt = async () => {
-    if (!encrypted) return;
-    setError("");
-    try {
-      const t=await user.getIdToken();
-      const r=await fetch(`${apiBaseUrl}/api/security/decrypt`,{
-        method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${t}`},
-        body:JSON.stringify(encrypted),
-      });
-      const d=await r.json();
-      if(!r.ok) throw new Error(d.message);
-      setDecrypted(d);
-    } catch(e){ setError(e.message); }
+    } catch (e) { setError(e.message); }
   };
 
   return (
     <>
       <div className="panel-title">Security</div>
-      <div className="panel-sub">AES-256-CBC encryption demo. Enter any text to encrypt and decrypt it server-side.</div>
-      <div className="alert alert-red">The decrypt endpoint is a public oracle — remove it before production.</div>
+      <div className="panel-sub">AES-256-CBC encryption. Encrypt sensitive data server-side.</div>
 
-      <div className="f-label" style={{marginBottom:6}}>Plaintext to encrypt</div>
-      <textarea value={input} placeholder="Enter any text or JSON…" onChange={e=>setInput(e.target.value)} style={{marginBottom:12}}/>
+      {error && <div style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</div>}
 
-      <div className="btn-row" style={{marginBottom:16}}>
-        <button className="btn btn-light" onClick={encrypt}>Encrypt</button>
-        <button className="btn btn-ghost" onClick={decrypt} disabled={!encrypted}>Decrypt</button>
+      <div style={{ marginTop: 16 }}>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+          Plaintext to encrypt
+        </div>
+        <textarea
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder="Enter any text or JSON..."
+          style={{
+            width: "100%", minHeight: 80, background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
+            color: "rgba(255,255,255,0.8)", padding: "10px 12px", fontSize: 13,
+            fontFamily: "monospace", resize: "vertical"
+          }}
+        />
+        <button
+          onClick={encrypt}
+          style={{
+            marginTop: 10, padding: "8px 20px", background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6,
+            color: "rgba(255,255,255,0.8)", fontSize: 13, cursor: "pointer"
+          }}
+        >
+          Encrypt
+        </button>
       </div>
 
-      {error && <p style={{color:"#ff5c5c",fontSize:13,marginBottom:8}}>{error}</p>}
-
-      <div className="f-label" style={{marginBottom:4}}>Ciphertext</div>
-      <div className="enc-box" style={{color:"#34d399"}}>{encrypted?.encryptedData||"—"}</div>
-
-      <div className="f-label" style={{marginTop:14,marginBottom:4}}>Decrypted</div>
-      <div className="enc-box" style={{color:"#6ee7b7"}}>{decrypted!==null?JSON.stringify(decrypted):"—"}</div>
+      {encrypted && (
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+            Encrypted output
+          </div>
+          <div style={{
+            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 8, padding: "10px 12px", fontSize: 12,
+            fontFamily: "monospace", color: "#4ade80", wordBreak: "break-all"
+          }}>
+            {JSON.stringify(encrypted, null, 2)}
+          </div>
+        </div>
+      )}
     </>
   );
 }

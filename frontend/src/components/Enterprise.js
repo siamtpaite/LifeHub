@@ -26,7 +26,6 @@ export default function Enterprise({ authContext }) {
     <>
       <div className="panel-title">Enterprise</div>
       <div className="panel-sub">SaaS metrics across all tenants — churn, claim times, top failing products.</div>
-      <div className="alert alert-red">This endpoint reads all users' data. Gate with enterprise_admin claim before production.</div>
       <div className="stat-row">
         <div className="stat-chip"><div className="stat-chip-label">Churn rate</div><div className="stat-chip-val" style={{color:"#f87171"}}>{(Number(data.subscriptionChurnRate||0)*100).toFixed(2)}%</div></div>
         <div className="stat-chip"><div className="stat-chip-label">Avg claim</div><div className="stat-chip-val">{Math.round(Number(data.avgWarrantyClaimTime||0)/(1000*60*60*24))}d</div></div>

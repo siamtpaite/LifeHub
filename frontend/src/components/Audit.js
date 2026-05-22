@@ -24,7 +24,6 @@ export function Audit({ authContext }) {
         </div>
         <span className="badge b-gray">{logs.length} events</span>
       </div>
-      <div className="alert alert-red" style={{marginBottom:16}}>GET /api/audit currently returns all users' logs. Add userId scoping before production.</div>
       <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)",borderRadius:14,overflow:"hidden",flex:1,overflowY:"auto"}}>
         {logs.map((log,i)=>(
           <div className="log-row" key={log.id||i}>

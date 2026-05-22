@@ -1,62 +1,57 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function Auth({ authContext }) {
-  const { apiBaseUrl } = authContext;
-  const [userId, setUserId] = useState("any-user-id");
-  const [tenantId, setTenantId] = useState("any-tenant-id");
-  const [role, setRole] = useState("viewer");
-  const [token, setToken] = useState("");
-  const [verified, setVerified] = useState(null);
+  const { user, apiBaseUrl } = authContext;
+  const [info, setInfo] = useState(null);
   const [error, setError] = useState("");
 
-  const genToken = async () => {
-    setError(""); setVerified(null);
-    try {
-      const r=await fetch(`${apiBaseUrl}/api/auth/login`,{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({userId,tenantId,role}),
-      });
-      const d=await r.json();
-      if(!r.ok) throw new Error(d.message);
-      setToken(d.token||"");
-    } catch(e){ setError(e.message); }
-  };
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const t = await user.getIdToken();
+        const r = await fetch(`${apiBaseUrl}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${t}` }
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.message);
+        setInfo(d);
+      } catch (e) {
+        setError(e.message);
+      }
+    })();
+  }, [user, apiBaseUrl]);
 
-  const verify = async () => {
-    if (!token) return;
-    setError("");
-    try {
-      const r=await fetch(`${apiBaseUrl}/api/auth/verify`,{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({token}),
-      });
-      const d=await r.json();
-      setVerified(d);
-    } catch(e){ setVerified({valid:false}); setError(e.message); }
-  };
+  const rows = [
+    { label: "UID", value: info?.uid },
+    { label: "Email", value: info?.email || user?.email },
+    { label: "Display name", value: info?.name || user?.displayName || "—" },
+    { label: "Provider", value: user?.providerData?.[0]?.providerId || "—" },
+    { label: "Email verified", value: user?.emailVerified ? "Yes" : "No" },
+    { label: "Account created", value: user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : "—" },
+  ];
 
   return (
     <>
-      <div className="panel-title">Auth</div>
-      <div className="panel-sub">Generate and verify JWT tokens — Zero-Trust demo panel.</div>
-      <div className="alert alert-red">This endpoint issues JWTs to any caller without credential verification. Anyone can claim any role. Remove before production.</div>
+      <div className="panel-title">Account</div>
+      <div className="panel-sub">Your LifeHub account details.</div>
 
-      <div className="form-row">
-        <div className="f-field"><div className="f-label">User ID</div><input value={userId} onChange={e=>setUserId(e.target.value)}/></div>
-        <div className="f-field"><div className="f-label">Tenant ID</div><input value={tenantId} onChange={e=>setTenantId(e.target.value)}/></div>
-        <div className="f-field"><div className="f-label">Role</div><select value={role} onChange={e=>setRole(e.target.value)}><option value="viewer">viewer</option><option value="manager">manager</option><option value="admin">admin</option></select></div>
+      {error && <div style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</div>}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
+        {rows.map(({ label, value }) => (
+          <div key={label} style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "12px 16px", background: "rgba(255,255,255,0.04)",
+            borderRadius: 8, border: "1px solid rgba(255,255,255,0.07)"
+          }}>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</span>
+            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", fontFamily: "monospace", maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis" }}>
+              {value || "—"}
+            </span>
+          </div>
+        ))}
       </div>
-      <div className="btn-row" style={{marginBottom:16}}>
-        <button className="btn btn-light" onClick={genToken}>Generate JWT</button>
-        <button className="btn btn-ghost" onClick={verify} disabled={!token}>Verify</button>
-      </div>
-      {error && <p style={{color:"#ff5c5c",fontSize:13,marginBottom:8}}>{error}</p>}
-
-      <div className="f-label" style={{marginBottom:4}}>Token output</div>
-      <div className="enc-box" style={{color:"#c084fc"}}>{token||"—"}</div>
-
-      <div className="f-label" style={{marginTop:14,marginBottom:4}}>Verification result</div>
-      <div className="enc-box" style={{color:"#a78bfa"}}>{verified?JSON.stringify(verified,null,2):"—"}</div>
     </>
   );
 }
