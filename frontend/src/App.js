@@ -273,15 +273,21 @@ function App() {
             textAlign: "center",
           }}>
             <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", lineHeight: 1.8 }}>
-              By continuing, you agree to our{" "}
+              <a href="/docs.html" target="_blank" rel="noreferrer"
+                style={{ color: "rgba(255,255,255,0.45)", textDecoration: "underline" }}>
+                Docs
+              </a>{" "}·{" "}
               <a href="/terms.html" target="_blank" rel="noreferrer"
                 style={{ color: "rgba(255,255,255,0.45)", textDecoration: "underline" }}>
-                Terms of Service
-              </a>{" "}and{" "}
+                Terms
+              </a>{" "}·{" "}
               <a href="/privacy.html" target="_blank" rel="noreferrer"
                 style={{ color: "rgba(255,255,255,0.45)", textDecoration: "underline" }}>
-                Privacy Policy
+                Privacy
               </a>
+            </p>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", marginTop: 4 }}>
+              By signing in you agree to our Terms of Service and Privacy Policy.
             </p>
             <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 8 }}>
               © 2026 LifeHub · Operated by Siam T. Paite
