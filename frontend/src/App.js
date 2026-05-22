@@ -6,6 +6,15 @@ import { registerPushNotifications, onForegroundMessage } from "./utils/pushNoti
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
+const FEATURES = [
+  { icon: "📦", title: "Warranty Vault", desc: "Scan receipts with AI. Never miss a claim window." },
+  { icon: "💳", title: "Subscriptions", desc: "Track every recurring charge. No surprise renewals." },
+  { icon: "🧠", title: "Skills Exchange", desc: "Log what you know. Trade skills with your network." },
+  { icon: "💰", title: "Savings Goals", desc: "Set targets, track progress, celebrate milestones." },
+  { icon: "🔔", title: "Smart Alerts", desc: "Push notifications before warranties and renewals expire." },
+  { icon: "🤖", title: "AI Advisor", desc: "Get personalised financial and lifestyle insights." },
+];
+
 function App() {
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState("");
@@ -13,15 +22,13 @@ function App() {
   const [isSignup, setIsSignup] = useState(false);
   const [authError, setAuthError] = useState("");
   const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
-        // Register push notifications after login
         await registerPushNotifications(u.uid);
-
-        // Listen for foreground messages and show a toast
         onForegroundMessage((payload) => {
           const { title, body } = payload.notification || {};
           setToast({ title, body });
@@ -37,6 +44,7 @@ function App() {
   const handleEmailAuth = async (e) => {
     e.preventDefault();
     setAuthError("");
+    setLoading(true);
     try {
       if (isSignup) await registerWithEmail(email, password);
       else await loginWithEmail(email, password);
@@ -50,87 +58,257 @@ function App() {
         "auth/invalid-credential": "Incorrect email or password.",
       };
       setAuthError(msgs[err.code] || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setAuthError("");
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setAuthError("Google sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   if (!user) {
     return (
-      <main className="auth-shell">
-        <section className="auth-card">
-          <h1>LifeHub</h1>
-          <p className="subtitle">ReceiptVault, Subscriptions and Skills in one PWA.</p>
-          <form className="auth-form" onSubmit={handleEmailAuth}>
-            <input type="email" required placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}/>
-            <input type="password" required minLength={6} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}/>
-            <button type="submit">{isSignup ? "Create Account" : "Sign In"}</button>
-          </form>
-          <div className="auth-actions">
-            <button type="button" onClick={signInWithGoogle}>Continue with Google</button>
+      <div style={{
+        minHeight: "100vh",
+        background: "radial-gradient(ellipse at 20% 50%, #0d1f3c 0%, #060a14 50%, #020408 100%)",
+        display: "grid",
+        gridTemplateColumns: "1fr 420px",
+        fontFamily: "'Inter', sans-serif",
+        overflow: "hidden",
+      }}>
+        {/* Left: Feature showcase */}
+        <div style={{
+          display: "flex", flexDirection: "column", justifyContent: "center",
+          padding: "60px 64px", position: "relative", overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute", top: "20%", left: "10%",
+            width: 400, height: 400,
+            background: "radial-gradient(circle, rgba(79,142,247,0.12) 0%, transparent 70%)",
+            pointerEvents: "none",
+          }}/>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 64 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: "linear-gradient(135deg, #2979ff, #4fc3f7)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 18,
+            }}>⬡</div>
+            <span style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: "-0.5px" }}>LifeHub</span>
           </div>
-          <button className="text-button" type="button" onClick={() => setIsSignup(v => !v)}>
+
+          <div style={{ marginBottom: 16 }}>
+            <div style={{
+              fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "#4f8ef7", marginBottom: 16, fontWeight: 500,
+            }}>Your personal life OS</div>
+            <h1 style={{
+              fontSize: 52, fontWeight: 700, color: "#fff",
+              lineHeight: 1.08, letterSpacing: "-1.5px", marginBottom: 20,
+            }}>
+              Everything<br/>about your life,<br/>
+              <span style={{ color: "#4f8ef7" }}>in one place.</span>
+            </h1>
+            <p style={{
+              fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7,
+              maxWidth: 480, fontWeight: 300,
+            }}>
+              LifeHub brings together your warranties, subscriptions, skills, and savings
+              into a single intelligent dashboard — with AI-powered insights and smart alerts.
+            </p>
+          </div>
+
+          <div style={{
+            display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 40, maxWidth: 560,
+          }}>
+            {FEATURES.map(f => (
+              <div key={f.title} style={{
+                padding: "16px 18px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.07)",
+                borderRadius: 12,
+              }}>
+                <div style={{ fontSize: 20, marginBottom: 8 }}>{f.icon}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{f.title}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Auth panel */}
+        <div style={{
+          display: "flex", flexDirection: "column", justifyContent: "center",
+          padding: "48px 40px",
+          background: "rgba(255,255,255,0.03)",
+          borderLeft: "1px solid rgba(255,255,255,0.07)",
+          backdropFilter: "blur(20px)",
+        }}>
+          <h2 style={{
+            fontSize: 24, fontWeight: 700, color: "#fff",
+            letterSpacing: "-0.5px", marginBottom: 6,
+          }}>
+            {isSignup ? "Create your account" : "Welcome back"}
+          </h2>
+          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 32, fontWeight: 300 }}>
+            {isSignup ? "Start managing your life smarter." : "Sign in to your LifeHub."}
+          </p>
+
+          <button
+            onClick={handleGoogle}
+            disabled={loading}
+            style={{
+              width: "100%", padding: "12px 16px", marginBottom: 20,
+              background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 500,
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              fontFamily: "'Inter', sans-serif",
+            }}
+            onMouseOver={e => e.currentTarget.style.background = "rgba(255,255,255,0.12)"}
+            onMouseOut={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </button>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }}/>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>or</span>
+            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }}/>
+          </div>
+
+          <form onSubmit={handleEmailAuth} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <input
+              type="email" required placeholder="Email address"
+              value={email} onChange={e => setEmail(e.target.value)}
+              style={{
+                padding: "12px 14px", background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
+                color: "#fff", fontSize: 14, fontFamily: "'Inter', sans-serif", outline: "none",
+              }}
+            />
+            <input
+              type="password" required minLength={6} placeholder="Password"
+              value={password} onChange={e => setPassword(e.target.value)}
+              style={{
+                padding: "12px 14px", background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
+                color: "#fff", fontSize: 14, fontFamily: "'Inter', sans-serif", outline: "none",
+              }}
+            />
+            <button
+              type="submit" disabled={loading}
+              style={{
+                padding: "12px 16px", marginTop: 4,
+                background: "linear-gradient(135deg, #2979ff, #4f8ef7)",
+                border: "none", borderRadius: 10, color: "#fff",
+                fontSize: 14, fontWeight: 600, cursor: "pointer",
+                fontFamily: "'Inter', sans-serif",
+                opacity: loading ? 0.7 : 1,
+              }}
+            >
+              {loading ? "Please wait..." : isSignup ? "Create Account" : "Sign In"}
+            </button>
+          </form>
+
+          {authError && (
+            <p style={{ fontSize: 13, color: "#f87171", marginTop: 12, textAlign: "center" }}>{authError}</p>
+          )}
+
+          <button
+            type="button" onClick={() => { setIsSignup(v => !v); setAuthError(""); }}
+            style={{
+              marginTop: 20, background: "none", border: "none",
+              color: "#4f8ef7", fontSize: 13, cursor: "pointer",
+              fontFamily: "'Inter', sans-serif", textAlign: "center",
+            }}
+          >
             {isSignup ? "Already have an account? Sign in" : "New here? Create an account"}
           </button>
-          {authError && <p className="error-text">{authError}</p>}
-        </section>
-      </main>
+
+          <div style={{
+            marginTop: 40, paddingTop: 24,
+            borderTop: "1px solid rgba(255,255,255,0.07)",
+            textAlign: "center",
+          }}>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", lineHeight: 1.8 }}>
+              By continuing, you agree to our{" "}
+              <a href="/terms.html" target="_blank" rel="noreferrer"
+                style={{ color: "rgba(255,255,255,0.45)", textDecoration: "underline" }}>
+                Terms of Service
+              </a>{" "}and{" "}
+              <a href="/privacy.html" target="_blank" rel="noreferrer"
+                style={{ color: "rgba(255,255,255,0.45)", textDecoration: "underline" }}>
+                Privacy Policy
+              </a>
+            </p>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 8 }}>
+              © 2026 LifeHub · Operated by Siam T. Paite
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
     <div style={{
-      display:"grid",
-      gridTemplateColumns:"68px 1fr",
-      height:"100vh",
-      overflow:"hidden",
+      display: "grid", gridTemplateColumns: "68px 1fr",
+      height: "100vh", overflow: "hidden",
     }}>
-      {/* Sign out button floats top-right */}
       <div style={{
-        position:"fixed",top:8,right:12,zIndex:100,
-        display:"flex",alignItems:"center",gap:10,
+        position: "fixed", top: 8, right: 12, zIndex: 100,
+        display: "flex", alignItems: "center", gap: 10,
       }}>
-        <span style={{fontSize:12,color:"rgba(255,255,255,.3)"}}>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,.3)" }}>
           {user.displayName || user.email}
         </span>
         <button
           onClick={logout}
           style={{
-            background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",
-            color:"rgba(255,255,255,.4)",borderRadius:6,padding:"4px 12px",
-            fontSize:12,fontFamily:"Inter,sans-serif",cursor:"pointer",
+            background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)",
+            color: "rgba(255,255,255,.4)", borderRadius: 6, padding: "4px 12px",
+            fontSize: 12, fontFamily: "Inter,sans-serif", cursor: "pointer",
           }}
-          onMouseOver={e=>{e.target.style.color="#ff5c5c";e.target.style.borderColor="rgba(255,92,92,.4)"}}
-          onMouseOut={e=>{e.target.style.color="rgba(255,255,255,.4)";e.target.style.borderColor="rgba(255,255,255,.1)"}}
+          onMouseOver={e => { e.target.style.color = "#ff5c5c"; e.target.style.borderColor = "rgba(255,92,92,.4)"; }}
+          onMouseOut={e => { e.target.style.color = "rgba(255,255,255,.4)"; e.target.style.borderColor = "rgba(255,255,255,.1)"; }}
         >
           Sign out
         </button>
       </div>
 
-      {/* Foreground push notification toast */}
       {toast && (
         <div style={{
-          position:"fixed", bottom:24, right:24, zIndex:999,
-          background:"#1e293b", border:"1px solid rgba(255,255,255,.12)",
-          borderRadius:12, padding:"14px 18px", maxWidth:320,
-          boxShadow:"0 8px 32px rgba(0,0,0,.4)",
-          animation:"fadeIn .3s ease"
+          position: "fixed", bottom: 24, right: 24, zIndex: 999,
+          background: "#1e293b", border: "1px solid rgba(255,255,255,.12)",
+          borderRadius: 12, padding: "14px 18px", maxWidth: 320,
+          boxShadow: "0 8px 32px rgba(0,0,0,.4)",
         }}>
-          <div style={{fontSize:13,fontWeight:600,color:"#fff",marginBottom:4}}>
-            {toast.title}
-          </div>
-          <div style={{fontSize:12,color:"rgba(255,255,255,.6)"}}>
-            {toast.body}
-          </div>
-          <button
-            onClick={() => setToast(null)}
-            style={{
-              position:"absolute",top:8,right:10,background:"none",
-              border:"none",color:"rgba(255,255,255,.3)",cursor:"pointer",fontSize:16
-            }}
-          >×</button>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{toast.title}</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,.6)" }}>{toast.body}</div>
+          <button onClick={() => setToast(null)} style={{
+            position: "absolute", top: 8, right: 10, background: "none",
+            border: "none", color: "rgba(255,255,255,.3)", cursor: "pointer", fontSize: 16,
+          }}>×</button>
         </div>
       )}
 
-      <Dashboard authContext={authContext}/>
+      <Dashboard authContext={authContext} />
     </div>
   );
 }
