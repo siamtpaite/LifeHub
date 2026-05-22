@@ -398,15 +398,18 @@ function Dashboard({ authContext }) {
   const [formOpen, setFormOpen] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState({});
+  const [expanded, setExpanded] = useState(false);
 
   const { isPro, planLoading } = authContext;
   const theme = THEMES[tab] || "theme-green";
+  const SW = expanded ? 180 : 68;
 
   const handleNavClick = (id) => {
     if (!isPro && PRO_ONLY_PANELS.has(id)) {
+      const label = NAV.find(n => n.id === id)?.label || id;
       setUpgradeReason({
-        title: "Pro Feature",
-        description: `This feature is available on the Pro plan. Upgrade to unlock it along with unlimited subscriptions, warranties, AI Advisor, and more.`,
+        title: `${label} — Pro Feature`,
+        description: `${label} is available on the Pro plan. Upgrade to unlock it along with unlimited access to all features.`,
       });
       setShowUpgrade(true);
       return;
@@ -417,22 +420,75 @@ function Dashboard({ authContext }) {
   };
 
   return (
-    <>
+    <div style={{ display:"grid", gridTemplateColumns:`${SW}px 1fr`, height:"100vh", overflow:"hidden", transition:"grid-template-columns 0.2s ease" }}>
       {/* SIDEBAR */}
-      <aside className="sidebar">
+      <aside style={{
+        background:"#111118",
+        display:"flex", flexDirection:"column",
+        alignItems:"flex-start",
+        padding:"12px 0", gap:2,
+        borderRight:"1px solid rgba(255,255,255,.06)",
+        overflowY:"auto", overflowX:"hidden",
+        width: SW, minWidth: SW, maxWidth: SW,
+        transition:"width 0.2s ease, min-width 0.2s ease, max-width 0.2s ease",
+      }}>
+        {/* Toggle */}
+        <button
+          onClick={() => setExpanded(v => !v)}
+          title={expanded ? "Collapse menu" : "Expand menu"}
+          style={{
+            width:44, height:28, borderRadius:8, border:"none",
+            background:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.35)",
+            cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
+            marginBottom:10, marginLeft:12, flexShrink:0, fontSize:13,
+          }}
+        >
+          {expanded ? "‹" : "›"}
+        </button>
+
         {NAV.map((item, i) => {
-          if (item.sep) return <div key={i} className="sidebar-sep"/>;
-          const isProOnly = PRO_ONLY_PANELS.has(item.id);
-          const locked = isProOnly && !isPro && !planLoading;
+          if (item.sep) return (
+            <div key={i} style={{
+              height:1, background:"rgba(255,255,255,.07)",
+              margin:"4px 12px", width: expanded ? "calc(100% - 24px)" : 30,
+              alignSelf:"center", flexShrink:0,
+              transition:"width 0.2s ease",
+            }}/>
+          );
+          const locked = PRO_ONLY_PANELS.has(item.id) && !isPro && !planLoading;
+          const isActive = tab === item.id;
           return (
             <button
               key={item.id}
               title={item.label + (locked ? " (Pro)" : "")}
-              className={`nav-item ${tab === item.id ? "active" : ""}`}
               onClick={() => handleNavClick(item.id)}
-              style={tab === item.id ? { background:item.glow, color:"#fff", boxShadow:`0 0 12px rgba(0,0,0,.3)` } : {}}
+              style={{
+                width: expanded ? `calc(100% - 16px)` : 44,
+                height:44, borderRadius:11, border:"none",
+                display:"flex", alignItems:"center",
+                justifyContent: expanded ? "flex-start" : "center",
+                gap:10,
+                padding: expanded ? "0 12px" : 0,
+                marginLeft: expanded ? 8 : 12,
+                cursor:"pointer", position:"relative", flexShrink:0,
+                background: isActive ? (item.glow || "rgba(255,255,255,0.1)") : "none",
+                color: isActive ? "#fff" : "rgba(255,255,255,.3)",
+                boxShadow: isActive ? "0 0 12px rgba(0,0,0,.3)" : "none",
+                transition:"all 0.2s ease",
+              }}
+              onMouseOver={e => { if(!isActive) e.currentTarget.style.background="rgba(255,255,255,0.07)"; e.currentTarget.style.color="rgba(255,255,255,0.6)"; }}
+              onMouseOut={e => { if(!isActive) e.currentTarget.style.background="none"; e.currentTarget.style.color=isActive?"#fff":"rgba(255,255,255,.3)"; }}
             >
-              {item.icon}
+              <span style={{ flexShrink:0, display:"flex", width:19, height:19 }}>{item.icon}</span>
+              {expanded && (
+                <span style={{
+                  fontSize:12, fontWeight:500, whiteSpace:"nowrap",
+                  color: isActive ? "#fff" : "rgba(255,255,255,0.55)",
+                  fontFamily:"Inter,sans-serif", overflow:"hidden", textOverflow:"ellipsis",
+                }}>
+                  {item.label}
+                </span>
+              )}
               {item.dot && <div className="nav-dot" style={{ background:item.dot }}/>}
               {locked && <ProBadge/>}
             </button>
@@ -537,7 +593,7 @@ function Dashboard({ authContext }) {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
