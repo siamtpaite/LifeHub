@@ -1,5 +1,5 @@
 const express = require("express");
-const { generateToken, verifyToken } = require("../services/authService");
+const { generateToken, requireAuth } = require("../services/authService");
 
 const router = express.Router();
 
@@ -24,7 +24,7 @@ router.post("/verify", (req, res) => {
       return res.status(400).json({ message: "token is required." });
     }
 
-    const decoded = verifyToken(token);
+    const decoded = requireAuth(token);
     if (decoded) {
       return res.json({ valid: true, decoded });
     }

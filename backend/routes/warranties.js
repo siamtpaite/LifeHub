@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const admin = require("firebase-admin");
-const { verifyToken } = require("../middlewareAuth");
+const requireAuth = require("../middlewareAuth");
 
-router.get("/", verifyToken, async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const db = admin.firestore();
     const snap = await db.collection("warranties")
@@ -15,7 +15,7 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
-router.post("/", verifyToken, async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
     const db = admin.firestore();
     const { productName, warrantyExpiryDate, receiptUrl, receiptImage, receiptFileName } = req.body;
