@@ -575,7 +575,7 @@ function Dashboard({ authContext }) {
             </SplitPanel>
           )}
           {tab === "audit" && (
-            <div style={{ position:"absolute", inset:0, paddingTop:52, overflow:"hidden", display:"flex", flexDirection:"column", background:"#0b0c0f" }}>
+            <div style={{ position:"absolute", top:52, left:0, right:0, bottom:0, overflow:"hidden", display:"flex", flexDirection:"column", background:"#0b0c0f" }}>
               <Audit authContext={authContext}/>
             </div>
           )}
@@ -595,7 +595,7 @@ function Dashboard({ authContext }) {
             </SplitPanel>
           )}
           {tab === "skills-chat" && (
-            <div style={{ position:"absolute", inset:0, paddingTop:52, overflow:"hidden", display:"flex", flexDirection:"column", background:"#0b0c0f" }}>
+            <div style={{ position:"absolute", top:52, left:0, right:0, bottom:0, overflow:"hidden", display:"flex", flexDirection:"column", background:"#0b0c0f" }}>
               <SkillsChat authContext={authContext}/>
             </div>
           )}
