@@ -121,7 +121,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif}
 /* ── FULL PANEL (no split, audit/etc) ── */
 .full-panel{
   position:absolute;inset:0;
-  padding:36px 40px;overflow-y:auto;
+  padding:52px 40px 36px;overflow-y:auto;
   display:flex;flex-direction:column;
   background:var(--bg,#0b0c0f);
 }
