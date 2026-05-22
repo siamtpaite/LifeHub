@@ -3,6 +3,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import Dashboard from "./components/Dashboard";
 import { auth, loginWithEmail, logout, registerWithEmail, signInWithGoogle, signInWithFacebook } from "./firebase";
 import { registerPushNotifications, onForegroundMessage } from "./utils/pushNotifications";
+import { usePlan } from "./usePlan";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
@@ -39,7 +40,8 @@ function App() {
     return unsub;
   }, []);
 
-  const authContext = useMemo(() => ({ user, apiBaseUrl: API_BASE_URL }), [user]);
+  const { plan, isPro, planExpiry, planLoading } = usePlan(user);
+  const authContext = useMemo(() => ({ user, apiBaseUrl: API_BASE_URL, plan, isPro, planExpiry, planLoading }), [user, plan, isPro, planExpiry, planLoading]);
 
   const handleEmailAuth = async (e) => {
     e.preventDefault();

@@ -15,6 +15,18 @@ import Auth from "./Auth";
 import Localization from "./Localization";
 import AIAdvisor from "./AIAdvisor";
 import SkillsChat from "./SkillsChat";
+import UpgradePrompt from "./UpgradePrompt";
+
+/* ── Free plan limits ── */
+export const FREE_LIMITS = {
+  subscriptions: 5,
+  warranties: 3,
+  skills: 5,
+  savings: 2,
+};
+
+/* ── Pro-only panels (entire panel locked) ── */
+const PRO_ONLY_PANELS = new Set(["ai-advisor", "skills-chat", "enterprise", "predictions"]);
 
 /* ── SVG SPHERES per panel ── */
 const GreenSphere = () => (
@@ -174,12 +186,11 @@ const IndigoSphere = () => (
     <ellipse cx="130" cy="178" rx="88" ry="38" fill="#4338ca" opacity=".22" filter="url(#enf)"/>
     <circle cx="130" cy="118" r="108" fill="url(#eng)"/>
     <ellipse cx="94" cy="72" rx="52" ry="29" fill="rgba(165,180,252,.45)" opacity=".7"/>
-    <rect x="94" y="88" width="72" height="72" rx="6" fill="rgba(255,255,255,.15)"/>
-    <rect x="94" y="88" width="72" height="16" rx="6" fill="rgba(255,255,255,.25)"/>
-    <rect x="104" y="114" width="12" height="12" rx="2" fill="rgba(255,255,255,.4)"/>
-    <rect x="124" y="114" width="12" height="12" rx="2" fill="rgba(255,255,255,.4)"/>
-    <rect x="144" y="114" width="12" height="12" rx="2" fill="rgba(255,255,255,.4)"/>
-    <rect x="114" y="136" width="12" height="24" rx="2" fill="rgba(255,255,255,.5)"/>
+    <rect x="82" y="88" width="96" height="72" rx="8" fill="rgba(255,255,255,.15)"/>
+    <rect x="82" y="88" width="96" height="18" rx="8" fill="rgba(255,255,255,.25)"/>
+    <rect x="92" y="118" width="36" height="6" rx="3" fill="rgba(255,255,255,.4)"/>
+    <rect x="92" y="130" width="56" height="6" rx="3" fill="rgba(255,255,255,.25)"/>
+    <rect x="92" y="142" width="44" height="6" rx="3" fill="rgba(255,255,255,.2)"/>
     <ellipse cx="130" cy="236" rx="74" ry="13" fill="rgba(0,0,0,.4)" filter="url(#enf)"/>
   </svg>
 );
@@ -195,110 +206,131 @@ const TealSphere = () => (
     <ellipse cx="130" cy="178" rx="88" ry="38" fill="#0f766e" opacity=".22" filter="url(#tnf)"/>
     <circle cx="130" cy="118" r="108" fill="url(#tng)"/>
     <ellipse cx="94" cy="72" rx="52" ry="29" fill="rgba(94,234,212,.45)" opacity=".7"/>
-    <circle cx="106" cy="100" r="20" fill="rgba(255,255,255,.3)"/>
-    <circle cx="154" cy="100" r="20" fill="rgba(255,255,255,.2)"/>
-    <circle cx="130" cy="115" r="16" fill="rgba(255,255,255,.4)"/>
-    <path d="M82 150 C82 136 93 126 106 126" stroke="rgba(255,255,255,.4)" strokeWidth="3" strokeLinecap="round" fill="none"/>
-    <path d="M178 150 C178 136 167 126 154 126" stroke="rgba(255,255,255,.3)" strokeWidth="3" strokeLinecap="round" fill="none"/>
-    <path d="M110 148 C110 136 119 131 130 131 C141 131 150 136 150 148" fill="rgba(255,255,255,.35)"/>
+    <circle cx="130" cy="118" r="38" fill="rgba(255,255,255,.2)"/>
+    <circle cx="130" cy="118" r="24" fill="rgba(255,255,255,.3)"/>
+    <circle cx="130" cy="118" r="10" fill="rgba(255,255,255,.6)"/>
     <ellipse cx="130" cy="236" rx="74" ry="13" fill="rgba(0,0,0,.4)" filter="url(#tnf)"/>
+  </svg>
+);
+
+const GraySphere = () => (
+  <svg width="260" height="260" viewBox="0 0 260 260" fill="none">
+    <defs>
+      <radialGradient id="grg" cx="38%" cy="32%" r="68%">
+        <stop offset="0%" stopColor="#d1d5db"/><stop offset="45%" stopColor="#4b5563"/><stop offset="100%" stopColor="#111827"/>
+      </radialGradient>
+      <filter id="grf"><feGaussianBlur stdDeviation="13"/></filter>
+    </defs>
+    <ellipse cx="130" cy="178" rx="88" ry="38" fill="#4b5563" opacity=".22" filter="url(#grf)"/>
+    <circle cx="130" cy="118" r="108" fill="url(#grg)"/>
+    <ellipse cx="94" cy="72" rx="52" ry="29" fill="rgba(209,213,219,.45)" opacity=".7"/>
+    <rect x="90" y="88" width="80" height="60" rx="8" fill="rgba(255,255,255,.2)"/>
+    <line x1="100" y1="108" x2="170" y2="108" stroke="rgba(255,255,255,.5)" strokeWidth="3"/>
+    <line x1="100" y1="120" x2="155" y2="120" stroke="rgba(255,255,255,.3)" strokeWidth="3"/>
+    <line x1="100" y1="132" x2="145" y2="132" stroke="rgba(255,255,255,.2)" strokeWidth="3"/>
+    <ellipse cx="130" cy="236" rx="74" ry="13" fill="rgba(0,0,0,.4)" filter="url(#grf)"/>
   </svg>
 );
 
 const EmeraldSphere = () => (
   <svg width="260" height="260" viewBox="0 0 260 260" fill="none">
     <defs>
-      <radialGradient id="secg" cx="38%" cy="32%" r="68%">
-        <stop offset="0%" stopColor="#6ee7b7"/><stop offset="45%" stopColor="#059669"/><stop offset="100%" stopColor="#011c0e"/>
+      <radialGradient id="emg" cx="38%" cy="32%" r="68%">
+        <stop offset="0%" stopColor="#6ee7b7"/><stop offset="45%" stopColor="#059669"/><stop offset="100%" stopColor="#022b1a"/>
       </radialGradient>
-      <filter id="secf"><feGaussianBlur stdDeviation="13"/></filter>
+      <filter id="emf"><feGaussianBlur stdDeviation="13"/></filter>
     </defs>
-    <ellipse cx="130" cy="178" rx="88" ry="38" fill="#059669" opacity=".22" filter="url(#secf)"/>
-    <circle cx="130" cy="118" r="108" fill="url(#secg)"/>
+    <ellipse cx="130" cy="178" rx="88" ry="38" fill="#059669" opacity=".22" filter="url(#emf)"/>
+    <circle cx="130" cy="118" r="108" fill="url(#emg)"/>
     <ellipse cx="94" cy="72" rx="52" ry="29" fill="rgba(110,231,183,.45)" opacity=".7"/>
-    <rect x="100" y="110" width="60" height="48" rx="8" fill="rgba(255,255,255,.25)"/>
-    <path d="M112 110 L112 98 C112 86 148 86 148 98 L148 110" stroke="rgba(255,255,255,.6)" strokeWidth="5" fill="none" strokeLinecap="round"/>
-    <circle cx="130" cy="132" r="8" fill="rgba(255,255,255,.7)"/>
-    <rect x="127" y="133" width="6" height="12" rx="3" fill="rgba(255,255,255,.7)"/>
-    <ellipse cx="130" cy="236" rx="74" ry="13" fill="rgba(0,0,0,.4)" filter="url(#secf)"/>
+    <path d="M130 80 L158 100 L148 132 L112 132 L102 100 Z" fill="rgba(255,255,255,.25)" stroke="rgba(255,255,255,.5)" strokeWidth="3"/>
+    <ellipse cx="130" cy="236" rx="74" ry="13" fill="rgba(0,0,0,.4)" filter="url(#emf)"/>
   </svg>
 );
 
-const GoldSphere = () => (
+const OrangeSphere = () => (
   <svg width="260" height="260" viewBox="0 0 260 260" fill="none">
     <defs>
-      <radialGradient id="mong" cx="38%" cy="32%" r="68%">
-        <stop offset="0%" stopColor="#fcd34d"/><stop offset="45%" stopColor="#b45309"/><stop offset="100%" stopColor="#1a0800"/>
+      <radialGradient id="org" cx="38%" cy="32%" r="68%">
+        <stop offset="0%" stopColor="#fdba74"/><stop offset="45%" stopColor="#ea580c"/><stop offset="100%" stopColor="#1c0800"/>
       </radialGradient>
-      <filter id="monf"><feGaussianBlur stdDeviation="13"/></filter>
+      <filter id="orf"><feGaussianBlur stdDeviation="13"/></filter>
     </defs>
-    <ellipse cx="130" cy="178" rx="88" ry="38" fill="#b45309" opacity=".22" filter="url(#monf)"/>
-    <circle cx="130" cy="118" r="108" fill="url(#mong)"/>
-    <ellipse cx="94" cy="72" rx="52" ry="29" fill="rgba(252,211,77,.45)" opacity=".7"/>
-    <circle cx="130" cy="118" r="44" fill="rgba(255,255,255,.2)" stroke="rgba(255,255,255,.4)" strokeWidth="4"/>
-    <text x="130" y="128" textAnchor="middle" fontSize="36" fontWeight="bold" fill="rgba(255,255,255,.85)" fontFamily="Inter,sans-serif">$</text>
-    <ellipse cx="130" cy="236" rx="74" ry="13" fill="rgba(0,0,0,.4)" filter="url(#monf)"/>
+    <ellipse cx="130" cy="178" rx="88" ry="38" fill="#ea580c" opacity=".22" filter="url(#orf)"/>
+    <circle cx="130" cy="118" r="108" fill="url(#org)"/>
+    <ellipse cx="94" cy="72" rx="52" ry="29" fill="rgba(253,186,116,.45)" opacity=".7"/>
+    <circle cx="110" cy="108" r="22" fill="rgba(255,255,255,.3)"/>
+    <circle cx="150" cy="108" r="22" fill="rgba(255,255,255,.2)"/>
+    <path d="M88 138 Q130 158 172 138" stroke="rgba(255,255,255,.6)" strokeWidth="4" fill="none" strokeLinecap="round"/>
+    <ellipse cx="130" cy="236" rx="74" ry="13" fill="rgba(0,0,0,.4)" filter="url(#orf)"/>
   </svg>
 );
-
-const PurpleSphere = () => (
-  <svg width="260" height="260" viewBox="0 0 260 260" fill="none">
-    <defs>
-      <radialGradient id="authg" cx="38%" cy="32%" r="68%">
-        <stop offset="0%" stopColor="#e9d5ff"/><stop offset="45%" stopColor="#7e22ce"/><stop offset="100%" stopColor="#0e021e"/>
-      </radialGradient>
-      <filter id="authf"><feGaussianBlur stdDeviation="13"/></filter>
-    </defs>
-    <ellipse cx="130" cy="178" rx="88" ry="38" fill="#7e22ce" opacity=".22" filter="url(#authf)"/>
-    <circle cx="130" cy="118" r="108" fill="url(#authg)"/>
-    <ellipse cx="94" cy="72" rx="52" ry="29" fill="rgba(233,213,255,.45)" opacity=".7"/>
-    <circle cx="130" cy="105" r="26" fill="rgba(255,255,255,.25)"/>
-    <path d="M104 152 C104 134 116 126 130 126 C144 126 156 134 156 152" fill="rgba(255,255,255,.2)"/>
-    <path d="M146 110 L158 110 L158 98" stroke="rgba(255,255,255,.7)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
-    <ellipse cx="130" cy="236" rx="74" ry="13" fill="rgba(0,0,0,.4)" filter="url(#authf)"/>
-  </svg>
-);
-
-/* ── NAV CONFIG ── */
-const NAV = [
-  { id:"subscriptions", label:"Subscriptions", glow:"linear-gradient(135deg,#15803d,#4ade80)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5M16 4v5"/></svg> },
-  { id:"warranties", label:"ReceiptVault", glow:"linear-gradient(135deg,#1d4ed8,#60a5fa)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2L4 6v6c0 5.5 3.5 10.7 8 12 4.5-1.3 8-6.5 8-12V6l-8-4z"/></svg> },
-  { id:"skills", label:"Skills", glow:"linear-gradient(135deg,#6d28d9,#a78bfa)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> },
-  { id:"savings", label:"Savings", glow:"linear-gradient(135deg,#b45309,#fbbf24)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M9 9h4.5a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3H15"/></svg> },
-  { sep:true },
-  { id:"analytics", label:"Analytics", glow:"linear-gradient(135deg,#0284c7,#38bdf8)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/></svg> },
-  { id:"predictions", label:"Predictions", glow:"linear-gradient(135deg,#9d174d,#f472b6)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
-  { id:"recalls", label:"Recalls", glow:"linear-gradient(135deg,#b91c1c,#f87171)", dot:"#f87171", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> },
-  { sep:true },
-  { id:"enterprise", label:"Enterprise", glow:"linear-gradient(135deg,#4338ca,#818cf8)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
-  { id:"tenants", label:"Tenants", glow:"linear-gradient(135deg,#0f766e,#2dd4bf)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="17" cy="21" r="3"/><circle cx="7" cy="21" r="3"/><path d="M7 18V9a4 4 0 0 1 8 0v1"/><path d="M5 10H3a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2"/></svg> },
-  { id:"audit", label:"Audit Logs", glow:"linear-gradient(135deg,#475569,#94a3b8)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
-  { id:"security", label:"Security", glow:"linear-gradient(135deg,#059669,#34d399)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> },
-  { id:"monetisation", label:"Subscription", glow:"linear-gradient(135deg,#92400e,#f59e0b)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M9 9h4.5a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3H15"/></svg> },
-  { id:"auth", label:"Auth", glow:"linear-gradient(135deg,#7e22ce,#c084fc)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M14 12H3"/></svg> },
-  { sep:true },
-  { id:"ai-advisor", label:"AI Advisor", glow:"linear-gradient(135deg,#4c1d95,#a78bfa)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 16v-4M12 8h.01"/></svg> },
-  { id:"skills-chat", label:"Skills Chat", glow:"linear-gradient(135deg,#0f766e,#2dd4bf)", icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
-];
 
 const SPHERES = {
-  subscriptions:<GreenSphere/>, warranties:<BlueSphere/>, skills:<VioletSphere/>,
-  savings:<AmberSphere/>, analytics:<SkySphere/>, predictions:<PinkSphere/>,
-  recalls:<RedSphere/>, enterprise:<IndigoSphere/>, tenants:<TealSphere/>,
-  audit:null, security:<EmeraldSphere/>, monetisation:<GoldSphere/>, auth:<PurpleSphere/>,
-  "ai-advisor":<VioletSphere/>, "skills-chat":null,
+  subscriptions: <GreenSphere/>,
+  warranties: <BlueSphere/>,
+  skills: <VioletSphere/>,
+  savings: <AmberSphere/>,
+  analytics: <SkySphere/>,
+  predictions: <PinkSphere/>,
+  recalls: <RedSphere/>,
+  enterprise: <IndigoSphere/>,
+  tenants: <TealSphere/>,
+  audit: <GraySphere/>,
+  security: <EmeraldSphere/>,
+  monetisation: <OrangeSphere/>,
+  auth: <GraySphere/>,
+  "ai-advisor": <BlueSphere/>,
+  "skills-chat": <VioletSphere/>,
 };
+
+const NAV = [
+  { id:"subscriptions", label:"Subscriptions", glow:"rgba(22,163,74,.35)", dot:"#16a34a",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> },
+  { id:"warranties", label:"Warranties", glow:"rgba(29,78,216,.35)", dot:"#1d4ed8",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 2L4 6v6c0 5.25 3.5 9.74 8 11 4.5-1.26 8-5.75 8-11V6l-8-4z"/></svg> },
+  { id:"skills", label:"Skills", glow:"rgba(124,58,237,.35)", dot:"#7c3aed",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+  { id:"savings", label:"Savings", glow:"rgba(217,119,6,.35)", dot:"#d97706",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
+  { sep:true },
+  { id:"analytics", label:"Analytics", glow:"rgba(2,132,199,.35)",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+  { id:"predictions", label:"Predictions", glow:"rgba(219,39,119,.35)",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
+  { id:"ai-advisor", label:"AI Advisor", glow:"rgba(29,78,216,.35)",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
+  { sep:true },
+  { id:"recalls", label:"Recalls", glow:"rgba(220,38,38,.35)",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> },
+  { id:"enterprise", label:"Enterprise", glow:"rgba(67,56,202,.35)",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
+  { id:"tenants", label:"Tenants", glow:"rgba(15,118,110,.35)",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+  { sep:true },
+  { id:"audit", label:"Audit", glow:"rgba(75,85,99,.35)",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> },
+  { id:"security", label:"Security", glow:"rgba(5,150,105,.35)",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> },
+  { id:"monetisation", label:"Subscription", glow:"rgba(234,88,12,.35)",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg> },
+  { sep:true },
+  { id:"auth", label:"Account", glow:"rgba(75,85,99,.35)",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+  { id:"skills-chat", label:"SkillsChat", glow:"rgba(124,58,237,.35)",
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
+];
 
 const THEMES = {
   subscriptions:"theme-green", warranties:"theme-blue", skills:"theme-violet",
   savings:"theme-amber", analytics:"theme-sky", predictions:"theme-pink",
   recalls:"theme-red", enterprise:"theme-indigo", tenants:"theme-teal",
-  audit:"theme-slate", security:"theme-emerald", monetisation:"theme-gold", auth:"theme-purple",
-  "ai-advisor":"theme-violet", "skills-chat":"theme-teal",
+  audit:"theme-slate", security:"theme-emerald", monetisation:"theme-orange",
+  auth:"theme-slate", "ai-advisor":"theme-blue", "skills-chat":"theme-violet",
 };
 
 const SCANS = {
-  subscriptions:"radial-gradient(circle at 40% 35%,#4ade80,#15803d)",
+  subscriptions:"radial-gradient(circle at 40% 35%,#4ade80,#16a34a)",
   warranties:"radial-gradient(circle at 40% 35%,#60a5fa,#1d4ed8)",
   skills:"radial-gradient(circle at 40% 35%,#a78bfa,#6d28d9)",
   savings:null, analytics:null,
@@ -348,12 +380,41 @@ function SplitPanel({ id, children, onScanClick }) {
   );
 }
 
+/* ── Pro badge shown on locked nav items ── */
+function ProBadge() {
+  return (
+    <span style={{
+      position:"absolute", top:4, right:4,
+      background:"linear-gradient(135deg,#2979ff,#4f8ef7)",
+      borderRadius:3, padding:"1px 4px",
+      fontSize:8, fontWeight:700, color:"#fff", letterSpacing:"0.04em",
+    }}>PRO</span>
+  );
+}
+
 function Dashboard({ authContext }) {
   const [tab, setTab] = useState("subscriptions");
   const [currency, setCurrency] = useState("INR");
   const [formOpen, setFormOpen] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState({});
 
+  const { isPro, planLoading } = authContext;
   const theme = THEMES[tab] || "theme-green";
+
+  const handleNavClick = (id) => {
+    if (!isPro && PRO_ONLY_PANELS.has(id)) {
+      setUpgradeReason({
+        title: "Pro Feature",
+        description: `This feature is available on the Pro plan. Upgrade to unlock it along with unlimited subscriptions, warranties, AI Advisor, and more.`,
+      });
+      setShowUpgrade(true);
+      return;
+    }
+    setTab(id);
+    setFormOpen(false);
+    setShowUpgrade(false);
+  };
 
   return (
     <>
@@ -361,16 +422,19 @@ function Dashboard({ authContext }) {
       <aside className="sidebar">
         {NAV.map((item, i) => {
           if (item.sep) return <div key={i} className="sidebar-sep"/>;
+          const isProOnly = PRO_ONLY_PANELS.has(item.id);
+          const locked = isProOnly && !isPro && !planLoading;
           return (
             <button
               key={item.id}
-              title={item.label}
+              title={item.label + (locked ? " (Pro)" : "")}
               className={`nav-item ${tab === item.id ? "active" : ""}`}
-              onClick={() => { setTab(item.id); setFormOpen(false); }}
+              onClick={() => handleNavClick(item.id)}
               style={tab === item.id ? { background:item.glow, color:"#fff", boxShadow:`0 0 12px rgba(0,0,0,.3)` } : {}}
             >
               {item.icon}
               {item.dot && <div className="nav-dot" style={{ background:item.dot }}/>}
+              {locked && <ProBadge/>}
             </button>
           );
         })}
@@ -383,9 +447,19 @@ function Dashboard({ authContext }) {
           <Localization apiBaseUrl={authContext.apiBaseUrl} onCurrencyChange={setCurrency}/>
         </div>
 
+        {/* Upgrade prompt overlay */}
+        {showUpgrade && (
+          <div style={{ position:"absolute", inset:0, zIndex:20, paddingTop:36 }}>
+            <UpgradePrompt
+              title={upgradeReason.title}
+              description={upgradeReason.description}
+              onClose={() => setShowUpgrade(false)}
+            />
+          </div>
+        )}
+
         {/* Panels */}
         <div style={{ position:"absolute", inset:0, paddingTop:36, overflow:"hidden", display:"flex", flexDirection:"column" }}>
-
           {tab === "subscriptions" && (
             <SplitPanel id="subscriptions" onScanClick={() => setFormOpen(f => !f)}>
               <Subscriptions authContext={authContext} currency={currency} formOpen={formOpen} setFormOpen={setFormOpen}/>
@@ -414,6 +488,11 @@ function Dashboard({ authContext }) {
           {tab === "predictions" && (
             <SplitPanel id="predictions">
               <Predictions authContext={authContext} currency={currency}/>
+            </SplitPanel>
+          )}
+          {tab === "ai-advisor" && (
+            <SplitPanel id="ai-advisor">
+              <AIAdvisor authContext={authContext} currency={currency}/>
             </SplitPanel>
           )}
           {tab === "recalls" && (
@@ -449,11 +528,6 @@ function Dashboard({ authContext }) {
           {tab === "auth" && (
             <SplitPanel id="auth">
               <Auth authContext={authContext}/>
-            </SplitPanel>
-          )}
-          {tab === "ai-advisor" && (
-            <SplitPanel id="ai-advisor">
-              <AIAdvisor authContext={authContext} currency={currency}/>
             </SplitPanel>
           )}
           {tab === "skills-chat" && (
