@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import Dashboard from "./components/Dashboard";
 import { auth, loginWithEmail, logout, registerWithEmail, signInWithGoogle } from "./firebase";
+import { registerPushNotifications, onForegroundMessage } from "./utils/pushNotifications";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
@@ -11,9 +12,23 @@ function App() {
   const [password, setPassword] = useState("");
   const [isSignup, setIsSignup] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, u => setUser(u));
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
+      if (u) {
+        // Register push notifications after login
+        await registerPushNotifications(u.uid);
+
+        // Listen for foreground messages and show a toast
+        onForegroundMessage((payload) => {
+          const { title, body } = payload.notification || {};
+          setToast({ title, body });
+          setTimeout(() => setToast(null), 6000);
+        });
+      }
+    });
     return unsub;
   }, []);
 
@@ -61,7 +76,6 @@ function App() {
     );
   }
 
-  /* ── Signed in: 2-col grid, sidebar + main, no topbar ── */
   return (
     <div style={{
       display:"grid",
@@ -90,6 +104,32 @@ function App() {
           Sign out
         </button>
       </div>
+
+      {/* Foreground push notification toast */}
+      {toast && (
+        <div style={{
+          position:"fixed", bottom:24, right:24, zIndex:999,
+          background:"#1e293b", border:"1px solid rgba(255,255,255,.12)",
+          borderRadius:12, padding:"14px 18px", maxWidth:320,
+          boxShadow:"0 8px 32px rgba(0,0,0,.4)",
+          animation:"fadeIn .3s ease"
+        }}>
+          <div style={{fontSize:13,fontWeight:600,color:"#fff",marginBottom:4}}>
+            {toast.title}
+          </div>
+          <div style={{fontSize:12,color:"rgba(255,255,255,.6)"}}>
+            {toast.body}
+          </div>
+          <button
+            onClick={() => setToast(null)}
+            style={{
+              position:"absolute",top:8,right:10,background:"none",
+              border:"none",color:"rgba(255,255,255,.3)",cursor:"pointer",fontSize:16
+            }}
+          >×</button>
+        </div>
+      )}
+
       <Dashboard authContext={authContext}/>
     </div>
   );

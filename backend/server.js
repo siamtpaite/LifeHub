@@ -16,6 +16,7 @@ const audit = require("./routes/audit");
 const security = require("./routes/security");
 const auth = require("./routes/auth");
 const aiAdvisor = require("./routes/ai-advisor");
+const checkExpiring = require("./cron/checkExpiring");
 
 dotenv.config();
 
@@ -42,6 +43,9 @@ app.use("/api/audit", audit);
 app.use("/api/security", security);
 app.use("/api/auth", auth);
 app.use("/api/ai", aiAdvisor);
+
+// Vercel Cron Job — runs daily at 8am IST (2:30 UTC)
+app.get("/api/cron/check-expiring", checkExpiring);
 
 const PORT = process.env.PORT || 5000;
 
