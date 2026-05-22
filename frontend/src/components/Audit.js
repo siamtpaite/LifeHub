@@ -17,7 +17,7 @@ export function Audit({ authContext }) {
 
   return (
     <div style={{height:"100%",display:"flex",flexDirection:"column",padding:"0 24px 24px"}}>
-      <div className="full-panel-head" style={{paddingTop:16}}>
+      <div className="full-panel-head" style={{paddingTop:8, marginTop:4}}>
         <div>
           <div className="full-panel-title">Audit Logs</div>
           <div className="full-panel-sub">Immutable event log — every action, timestamped</div>
