@@ -301,7 +301,7 @@ function App() {
   }
 
   return (
-    <div style={{ height: "100vh", overflow: "hidden" }}>
+    <div style={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{
         position: "fixed", top: 8, right: 12, zIndex: 100,
         display: "flex", alignItems: "center", gap: 10,
