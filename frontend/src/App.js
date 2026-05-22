@@ -301,10 +301,7 @@ function App() {
   }
 
   return (
-    <div style={{
-      display: "grid", gridTemplateColumns: "68px 1fr",
-      height: "100vh", overflow: "hidden",
-    }}>
+    <div style={{ height: "100vh", overflow: "hidden" }}>
       <div style={{
         position: "fixed", top: 8, right: 12, zIndex: 100,
         display: "flex", alignItems: "center", gap: 10,
