@@ -16,7 +16,7 @@ export function Audit({ authContext }) {
   },[apiBaseUrl,user]);
 
   return (
-    <div style={{height:"100%",display:"flex",flexDirection:"column", padding:"0 24px 24px"}}>
+    <div style={{height:"100%",display:"flex",flexDirection:"column",padding:"0 24px 24px"}}>
       <div className="full-panel-head" style={{paddingTop:16}}>
         <div>
           <div className="full-panel-title">Audit Logs</div>
