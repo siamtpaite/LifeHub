@@ -567,7 +567,7 @@ function Dashboard({ authContext }) {
             </SplitPanel>
           )}
           {tab === "audit" && (
-            <div className="full-panel theme-slate" style={{ paddingTop:12 }}>
+            <div className="full-panel theme-slate" style={{ paddingTop:48, overflowY:"auto" }}>
               <Audit authContext={authContext}/>
             </div>
           )}
@@ -587,7 +587,7 @@ function Dashboard({ authContext }) {
             </SplitPanel>
           )}
           {tab === "skills-chat" && (
-            <div className="full-panel theme-teal" style={{ padding:0 }}>
+            <div className="full-panel theme-teal" style={{ padding:0, paddingTop:36 }}>
               <SkillsChat authContext={authContext}/>
             </div>
           )}
