@@ -18,6 +18,7 @@ const FEATURES = [
 
 function App() {
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignup, setIsSignup] = useState(false);
@@ -28,6 +29,7 @@ function App() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
+      setAuthLoading(false);
       if (u) {
         await registerPushNotifications(u.uid);
         onForegroundMessage((payload) => {
@@ -88,6 +90,21 @@ function App() {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div style={{
+        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+        background: "radial-gradient(ellipse at 20% 50%, #0d1f3c 0%, #060a14 50%, #020408 100%)",
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+          <img src="/lifehub-icon.png" alt="LifeHub" style={{ width: 48, height: 48, borderRadius: 12, opacity: 0.8 }}/>
+          <div style={{ width: 24, height: 24, border: "2px solid rgba(79,142,247,0.3)", borderTop: "2px solid #4f8ef7", borderRadius: "50%", animation: "spin 0.8s linear infinite" }}/>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

@@ -393,12 +393,12 @@ function ProBadge() {
 }
 
 function Dashboard({ authContext }) {
-  const [tab, setTab] = useState("subscriptions");
+  const [tab, setTab] = useState(() => localStorage.getItem("lh_tab") || "subscriptions");
   const [currency, setCurrency] = useState("INR");
   const [formOpen, setFormOpen] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState({});
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(() => localStorage.getItem("lh_sidebar") === "1");
 
   const { isPro, planLoading } = authContext;
   const theme = THEMES[tab] || "theme-green";
@@ -415,8 +415,16 @@ function Dashboard({ authContext }) {
       return;
     }
     setTab(id);
+    localStorage.setItem("lh_tab", id);
     setFormOpen(false);
     setShowUpgrade(false);
+  };
+
+  const toggleSidebar = () => {
+    setExpanded(v => {
+      localStorage.setItem("lh_sidebar", v ? "0" : "1");
+      return !v;
+    });
   };
 
   return (
@@ -434,7 +442,7 @@ function Dashboard({ authContext }) {
       }}>
         {/* Toggle */}
         <button
-          onClick={() => setExpanded(v => !v)}
+          onClick={() => toggleSidebar()}
           title={expanded ? "Collapse menu" : "Expand menu"}
           style={{
             width:44, height:28, borderRadius:8, border:"none",
@@ -567,7 +575,7 @@ function Dashboard({ authContext }) {
             </SplitPanel>
           )}
           {tab === "audit" && (
-            <div className="full-panel theme-slate" style={{ paddingTop:48, overflowY:"auto" }}>
+            <div style={{ position:"absolute", inset:0, paddingTop:44, overflow:"hidden", display:"flex", flexDirection:"column", background:"#0b0c0f" }}>
               <Audit authContext={authContext}/>
             </div>
           )}
@@ -587,7 +595,7 @@ function Dashboard({ authContext }) {
             </SplitPanel>
           )}
           {tab === "skills-chat" && (
-            <div className="full-panel theme-teal" style={{ padding:0, paddingTop:36 }}>
+            <div style={{ position:"absolute", inset:0, paddingTop:44, overflow:"hidden", display:"flex", flexDirection:"column", background:"#0b0c0f" }}>
               <SkillsChat authContext={authContext}/>
             </div>
           )}
