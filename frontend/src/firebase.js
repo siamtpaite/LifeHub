@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
+  FacebookAuthProvider,
   OAuthProvider,
   signInWithPopup,
   createUserWithEmailAndPassword,
@@ -26,9 +27,11 @@ export const storage = getStorage(app);
 export const db = getFirestore(app);
 
 const googleProvider = new GoogleAuthProvider();
+const facebookProvider = new FacebookAuthProvider();
 const appleProvider = new OAuthProvider("apple.com");
 
 export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
+export const signInWithFacebook = () => signInWithPopup(auth, facebookProvider);
 export const signInWithApple = () => signInWithPopup(auth, appleProvider);
 export const registerWithEmail = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 export const loginWithEmail = (email, password) => signInWithEmailAndPassword(auth, email, password);
