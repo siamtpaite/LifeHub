@@ -9,10 +9,12 @@
     "react-scripts": "^5.0.1"
   },
   "scripts": {
+    "prestart": "node scripts/stamp-service-worker.js",
     "start": "react-scripts start",
+    "prebuild": "node scripts/stamp-service-worker.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "vercel-build": "react-scripts build"
+    "vercel-build": "node scripts/stamp-service-worker.js && react-scripts build"
   },
   "browserslist": {
     "production": [

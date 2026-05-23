@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "__BUILD_ID__";
 const CACHE_NAME = `lifehub-cache-${CACHE_VERSION}`;
 const STATIC_ASSET_PREFIX = "/static/";
 const OFFLINE_URL = "/index.html";
