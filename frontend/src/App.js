@@ -3,6 +3,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import Dashboard from "./components/Dashboard";
 import {
   auth,
+  clearOAuthPending,
   completeOAuthRedirect,
   getAuthErrorMessage,
   loginWithEmail,
@@ -76,6 +77,7 @@ function App() {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
+        clearOAuthPending();
         await registerPushNotifications(u.uid);
         onForegroundMessage((payload) => {
           const { title, body } = payload.notification || {};
@@ -130,7 +132,9 @@ function App() {
     setLoading(true);
     try {
       await signInWithFacebook();
+      setLoading(false);
     } catch (err) {
+      clearOAuthPending();
       setAuthError(getAuthErrorMessage(err, "Facebook"));
       setLoading(false);
     }
