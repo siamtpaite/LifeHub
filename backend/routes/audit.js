@@ -7,15 +7,13 @@ const router = express.Router();
 
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { userId, action, details, tenantId } = req.body;
+    const { action, details, tenantId } = req.body;
     if (!action) {
       return res.status(400).json({ message: "action is required." });
     }
 
-    const event = logEvent(userId || req.user.uid, action, details || "");
-    if (tenantId) {
-      event.tenantId = tenantId;
-    }
+    const event = logEvent(req.user.uid, action, details || "");
+    if (tenantId) event.tenantId = tenantId;
 
     await db.collection("auditLogs").add(event);
     return res.status(201).json(event);
@@ -26,7 +24,11 @@ router.post("/", requireAuth, async (req, res) => {
 
 router.get("/", requireAuth, async (req, res) => {
   try {
-    const snapshot = await db.collection("auditLogs").orderBy("timestamp", "desc").get();
+    // Scope to logged-in user only
+    const snapshot = await db.collection("auditLogs")
+      .where("userId", "==", req.user.uid)
+      .orderBy("timestamp", "desc")
+      .get();
     const logs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     const filtered = filterLogs(logs, req.query);
     return res.json(filtered);

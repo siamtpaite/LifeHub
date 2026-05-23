@@ -7,10 +7,13 @@ const router = express.Router();
 
 router.get("/", requireAuth, async (req, res) => {
   try {
+    const uid = req.user.uid;
+
+    // Scope all queries to the logged-in user's data only
     const [subsSnap, warrantiesSnap, recallsSnap] = await Promise.all([
-      db.collection("subscriptions").get(),
-      db.collection("warranties").get(),
-      db.collection("recalls").get()
+      db.collection("subscriptions").where("userId", "==", uid).get(),
+      db.collection("warranties").where("userId", "==", uid).get(),
+      db.collection("recalls").where("userId", "==", uid).get()
     ]);
 
     const subscriptions = subsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
