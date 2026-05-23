@@ -116,7 +116,6 @@ function App() {
     setLoading(true);
     try {
       await signInWithFacebook();
-      setLoading(false);
     } catch (err) {
       setAuthError(getAuthErrorMessage(err, "Facebook"));
       setLoading(false);

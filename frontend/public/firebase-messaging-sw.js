@@ -5,7 +5,7 @@ importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-comp
 // These values are safe to expose (already in your public JS bundle)
 firebase.initializeApp({
   apiKey: "AIzaSyDIAubZv255nZJ87PKg3TFyrjbEwqtBr6o",
-  authDomain: "lifehub-db6bb.firebaseapp.com",
+  authDomain: "www.lifehub.fit",
   projectId: "lifehub-db6bb",
   storageBucket: "lifehub-db6bb.appspot.com",
   messagingSenderId: "457163791884",

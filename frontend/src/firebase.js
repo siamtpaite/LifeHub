@@ -5,7 +5,6 @@ import {
   FacebookAuthProvider,
   OAuthProvider,
   signInWithRedirect,
-  signInWithPopup,
   getRedirectResult,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -31,37 +30,21 @@ export const db = getFirestore(app);
 
 const googleProvider = new GoogleAuthProvider();
 const facebookProvider = new FacebookAuthProvider();
-
 const appleProvider = new OAuthProvider("apple.com");
 
-export function isMobileBrowser() {
-  if (typeof navigator === "undefined") return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  );
-}
-
-/** Google: redirect everywhere (reliable cross-browser). */
-export const signInWithGoogle = () => signInWithRedirect(auth, googleProvider);
-
 /**
- * Facebook: redirect on desktop; popup on mobile browsers.
- * Facebook redirect frequently bounces back to the homepage on mobile without
- * showing login (storage partitioning); popup keeps the flow in-tab.
+ * Redirect-based OAuth for all providers and devices.
+ * Requires REACT_APP_FIREBASE_AUTH_DOMAIN=www.lifehub.fit in production and
+ * vercel.json proxy of /__/auth/* → lifehub-db6bb.firebaseapp.com (see Firebase
+ * redirect best practices for third-party storage partitioning in Chrome).
  */
-export const signInWithFacebook = () => {
-  if (isMobileBrowser()) {
-    facebookProvider.setCustomParameters({ display: "touch" });
-    return signInWithPopup(auth, facebookProvider);
-  }
-  return signInWithRedirect(auth, facebookProvider);
-};
-
+export const signInWithGoogle = () => signInWithRedirect(auth, googleProvider);
+export const signInWithFacebook = () => signInWithRedirect(auth, facebookProvider);
 export const signInWithApple = () => signInWithRedirect(auth, appleProvider);
 
 /**
- * Resolve to the redirect result if present, or null. Wrapped with a hard
- * timeout so a slow/hanging Firebase auth call never blocks the splash screen.
+ * Resolve redirect result after OAuth return. Never blocks UI; errors swallowed
+ * here — button handlers surface user-initiated failures.
  */
 export function completeOAuthRedirect(timeoutMs = 4000) {
   const result = getRedirectResult(auth).catch(() => null);
