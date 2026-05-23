@@ -29,35 +29,30 @@ export const storage = getStorage(app);
 export const db = getFirestore(app);
 
 const googleProvider = new GoogleAuthProvider();
+const facebookProvider = new FacebookAuthProvider();
 const appleProvider = new OAuthProvider("apple.com");
-
-/** Fresh provider per sign-in. Scope is public_profile only — this app’s Meta config rejects `email`. */
-function createFacebookProvider() {
-  const provider = new FacebookAuthProvider();
-  provider.addScope("public_profile");
-  provider.setCustomParameters({ scope: "public_profile" });
-  return provider;
-}
 
 /**
  * Redirect-based OAuth for all providers and devices.
  * Requires REACT_APP_FIREBASE_AUTH_DOMAIN=www.lifehub.fit in production and
- * vercel.json proxy of /__/auth/* → lifehub-db6bb.firebaseapp.com (see Firebase
- * redirect best practices for third-party storage partitioning in Chrome).
+ * vercel.json proxy of /__/auth/* → lifehub-db6bb.firebaseapp.com.
+ *
+ * Facebook: Firebase always requests email + public_profile. If Meta shows
+ * "Invalid Scopes: email", add email under Use cases → Facebook Login → Permissions
+ * in developers.facebook.com (not fixable from client code alone).
  */
 export const signInWithGoogle = () => signInWithRedirect(auth, googleProvider);
-export const signInWithFacebook = () =>
-  signInWithRedirect(auth, createFacebookProvider());
+export const signInWithFacebook = () => signInWithRedirect(auth, facebookProvider);
 export const signInWithApple = () => signInWithRedirect(auth, appleProvider);
 
 /**
- * Resolve redirect result after OAuth return. Never blocks UI; errors swallowed
- * here — button handlers surface user-initiated failures.
+ * Complete OAuth redirect when returning to the app. Rejects on real auth errors
+ * so the UI can show them (e.g. failed Facebook scope / cancelled redirect).
  */
-export function completeOAuthRedirect(timeoutMs = 4000) {
-  const result = getRedirectResult(auth).catch(() => null);
+export function completeOAuthRedirect(timeoutMs = 8000) {
+  const redirectResult = getRedirectResult(auth);
   const timeout = new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs));
-  return Promise.race([result, timeout]);
+  return Promise.race([redirectResult, timeout]);
 }
 
 const AUTH_ERROR_MESSAGES = {
@@ -70,6 +65,8 @@ const AUTH_ERROR_MESSAGES = {
     "An account already exists with this email using a different sign-in method.",
   "auth/network-request-failed": "Network error. Check your connection and try again.",
   "auth/too-many-requests": "Too many attempts. Please wait a moment and try again.",
+  "auth/web-storage-unsupported":
+    "Sign-in could not save session data. Turn off private browsing or allow site storage for lifehub.fit.",
 };
 
 export function getAuthErrorMessage(err, providerLabel) {

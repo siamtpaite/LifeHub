@@ -55,10 +55,16 @@ function App() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Best-effort redirect completion. Errors from this background check are
-    // intentionally swallowed - errors from user-initiated sign-in clicks are
-    // surfaced via the button handlers instead.
-    completeOAuthRedirect();
+    completeOAuthRedirect()
+      .catch((err) => {
+        if (err?.code) {
+          const providerId = err.customData?._tokenResponse?.providerId;
+          const label =
+            providerId === "facebook.com" ? "Facebook" :
+            providerId === "google.com" ? "Google" : undefined;
+          setAuthError(getAuthErrorMessage(err, label));
+        }
+      });
 
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
