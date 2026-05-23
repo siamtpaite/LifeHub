@@ -29,8 +29,15 @@ export const storage = getStorage(app);
 export const db = getFirestore(app);
 
 const googleProvider = new GoogleAuthProvider();
-const facebookProvider = new FacebookAuthProvider();
 const appleProvider = new OAuthProvider("apple.com");
+
+/** Fresh provider per sign-in. Scope is public_profile only — this app’s Meta config rejects `email`. */
+function createFacebookProvider() {
+  const provider = new FacebookAuthProvider();
+  provider.addScope("public_profile");
+  provider.setCustomParameters({ scope: "public_profile" });
+  return provider;
+}
 
 /**
  * Redirect-based OAuth for all providers and devices.
@@ -39,7 +46,8 @@ const appleProvider = new OAuthProvider("apple.com");
  * redirect best practices for third-party storage partitioning in Chrome).
  */
 export const signInWithGoogle = () => signInWithRedirect(auth, googleProvider);
-export const signInWithFacebook = () => signInWithRedirect(auth, facebookProvider);
+export const signInWithFacebook = () =>
+  signInWithRedirect(auth, createFacebookProvider());
 export const signInWithApple = () => signInWithRedirect(auth, appleProvider);
 
 /**
