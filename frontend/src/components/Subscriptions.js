@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 
+const FREE_LIMIT = 5;
+
 export default function Subscriptions({ authContext, currency="INR", formOpen, setFormOpen }) {
-  const { user, apiBaseUrl } = authContext;
+  const { user, apiBaseUrl, isPro } = authContext;
   const [name, setName] = useState("");
   const [cost, setCost] = useState("");
   const [renewalDate, setRenewalDate] = useState("");
@@ -23,8 +25,20 @@ export default function Subscriptions({ authContext, currency="INR", formOpen, s
 
   useEffect(()=>{ load(); },[]);
 
+  const atLimit = !isPro && items.length >= FREE_LIMIT;
+
+  const handleAddClick = () => {
+    if (atLimit) {
+      setError(`Free plan is limited to ${FREE_LIMIT} subscriptions. Upgrade to Pro for unlimited.`);
+      return;
+    }
+    setError("");
+    setFormOpen(f => !f);
+  };
+
   const save = async () => {
     if (!name||!renewalDate) return;
+    if (atLimit) { setError(`Free plan limit of ${FREE_LIMIT} reached.`); return; }
     try {
       const t = await user.getIdToken();
       const r = await fetch(`${apiBaseUrl}/api/subscriptions`,{
@@ -55,7 +69,14 @@ export default function Subscriptions({ authContext, currency="INR", formOpen, s
         <div className="stat-chip"><div className="stat-chip-label">Annual</div><div className="stat-chip-val">{fmt(total*12)}</div></div>
       </div>
 
-      <div className={`form-card ${formOpen?"open":""}`}>
+      {!isPro && (
+        <div style={{ fontSize:11, color: atLimit ? "#f87171" : "rgba(255,255,255,0.3)", marginBottom:8 }}>
+          {items.length}/{FREE_LIMIT} used on free plan
+          {atLimit && <a href="/docs.html#upgrade" target="_blank" rel="noreferrer" style={{ color:"#4f8ef7", marginLeft:8 }}>Upgrade to Pro →</a>}
+        </div>
+      )}
+
+      <div className={`form-card ${formOpen&&!atLimit?"open":""}`}>
         <div className="form-row">
           <div className="f-field"><div className="f-label">Service</div><input value={name} placeholder="Netflix, Spotify…" onChange={e=>setName(e.target.value)}/></div>
           <div className="f-field"><div className="f-label">Cost / mo</div><input type="number" step="0.01" value={cost} placeholder="9.99" onChange={e=>setCost(e.target.value)}/></div>
@@ -67,9 +88,11 @@ export default function Subscriptions({ authContext, currency="INR", formOpen, s
         </div>
       </div>
 
-      <button className="add-btn" onClick={()=>setFormOpen(f=>!f)}>+ Add subscription</button>
+      <button className="add-btn" onClick={handleAddClick} style={{ opacity: atLimit ? 0.5 : 1 }}>
+        + Add subscription
+      </button>
 
-      {error && <p style={{color:"#ff5c5c",fontSize:13,marginBottom:8}}>{error}</p>}
+      {error && <p style={{color:"#f87171",fontSize:13,marginBottom:8}}>{error}</p>}
 
       <div className="data-wrap">
         {loading ? <p style={{color:"rgba(255,255,255,.4)",fontSize:13}}>Loading…</p> :

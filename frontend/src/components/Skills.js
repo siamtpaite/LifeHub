@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 
+const FREE_LIMIT = 5;
+
 export default function Skills({ authContext, formOpen, setFormOpen }) {
-  const { user, apiBaseUrl } = authContext;
+  const { user, apiBaseUrl, isPro } = authContext;
   const [skillName, setSkillName] = useState("");
   const [description, setDescription] = useState("");
   const [exchangeId, setExchangeId] = useState("");
@@ -19,8 +21,21 @@ export default function Skills({ authContext, formOpen, setFormOpen }) {
 
   useEffect(()=>{ load(); const id=setInterval(load,15000); return ()=>clearInterval(id); },[]);
 
+  const mySkills = items.filter(s => s.ownerName === user.email || s.userId === user.uid);
+  const atLimit = !isPro && mySkills.length >= FREE_LIMIT;
+
+  const handleAddClick = () => {
+    if (atLimit) {
+      setError(`Free plan is limited to ${FREE_LIMIT} skills. Upgrade to Pro for unlimited.`);
+      return;
+    }
+    setError("");
+    setFormOpen(f => !f);
+  };
+
   const offer = async () => {
     if (!skillName) return;
+    if (atLimit) { setError(`Free plan limit of ${FREE_LIMIT} reached.`); return; }
     try {
       const t = await user.getIdToken();
       await fetch(`${apiBaseUrl}/api/skills/offer`,{
@@ -48,7 +63,14 @@ export default function Skills({ authContext, formOpen, setFormOpen }) {
       <div className="panel-title">Skills</div>
       <div className="panel-sub">Offer your expertise and exchange skills with the community using credits.</div>
 
-      <div className={`form-card ${formOpen?"open":""}`}>
+      {!isPro && (
+        <div style={{ fontSize:11, color: atLimit ? "#f87171" : "rgba(255,255,255,0.3)", marginBottom:8 }}>
+          {mySkills.length}/{FREE_LIMIT} skills offered on free plan
+          {atLimit && <a href="/docs.html#upgrade" target="_blank" rel="noreferrer" style={{ color:"#4f8ef7", marginLeft:8 }}>Upgrade to Pro →</a>}
+        </div>
+      )}
+
+      <div className={`form-card ${formOpen && !atLimit ? "open" : ""}`}>
         <div className="form-row">
           <div className="f-field"><div className="f-label">Skill name</div><input value={skillName} placeholder="UI Design, Python tutoring…" onChange={e=>setSkillName(e.target.value)}/></div>
         </div>
@@ -61,14 +83,14 @@ export default function Skills({ authContext, formOpen, setFormOpen }) {
         </div>
       </div>
 
-      <button className="add-btn" onClick={()=>setFormOpen(f=>!f)}>+ Offer a skill</button>
+      <button className="add-btn" onClick={handleAddClick} style={{ opacity: atLimit ? 0.5 : 1 }}>+ Offer a skill</button>
 
       <div style={{display:"flex",gap:8,marginBottom:16}}>
         <input value={exchangeId} placeholder="Skill ID to exchange" onChange={e=>setExchangeId(e.target.value)} style={{flex:1}}/>
         <button className="btn btn-ghost" style={{flexShrink:0}} onClick={exchange}>Exchange (-1 cr)</button>
       </div>
 
-      {error && <p style={{color:"#ff5c5c",fontSize:13,marginBottom:8}}>{error}</p>}
+      {error && <p style={{color:"#f87171",fontSize:13,marginBottom:8}}>{error}</p>}
 
       <div className="data-wrap">
         <table className="data-table">
