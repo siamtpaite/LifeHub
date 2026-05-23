@@ -523,7 +523,7 @@ function Dashboard({ authContext }) {
         )}
 
         {/* Panels */}
-        <div style={{ position:"absolute", inset:0, paddingTop:44, overflow:"hidden", display:"flex", flexDirection:"column" }}>
+        <div style={{ position:"absolute", inset:0, paddingTop:50, overflow:"hidden", display:"flex", flexDirection:"column" }}>
           {tab === "subscriptions" && (
             <SplitPanel id="subscriptions" onScanClick={() => setFormOpen(f => !f)}>
               <Subscriptions authContext={authContext} currency={currency} formOpen={formOpen} setFormOpen={setFormOpen}/>
