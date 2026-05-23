@@ -1,9 +1,6 @@
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
-  initializeAuth,
-  indexedDBLocalPersistence,
-  browserLocalPersistence,
   GoogleAuthProvider,
   FacebookAuthProvider,
   OAuthProvider,
@@ -28,24 +25,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-function initAuth() {
-  try {
-    return initializeAuth(app, {
-      persistence: [indexedDBLocalPersistence, browserLocalPersistence],
-    });
-  } catch (e) {
-    if (e?.code === "auth/already-initialized") {
-      return getAuth(app);
-    }
-    throw e;
-  }
-}
-
-export const auth = initAuth();
+export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const db = getFirestore(app);
-
-const OAUTH_PENDING_KEY = "lifehub_oauth_pending";
 
 const googleProvider = new GoogleAuthProvider();
 const facebookProvider = new FacebookAuthProvider();
@@ -60,84 +42,32 @@ export function isMobileBrowser() {
   );
 }
 
-function configureFacebookProvider() {
-  if (isMobileBrowser()) {
-    facebookProvider.setCustomParameters({ display: "touch" });
-  }
-}
-
-configureFacebookProvider();
-
-export function markOAuthPending(provider) {
-  try {
-    sessionStorage.setItem(OAUTH_PENDING_KEY, provider);
-  } catch (_) {
-    /* private mode / blocked storage */
-  }
-}
-
-export function clearOAuthPending() {
-  try {
-    sessionStorage.removeItem(OAUTH_PENDING_KEY);
-  } catch (_) {
-    /* ignore */
-  }
-}
-
-function consumeOAuthPending() {
-  try {
-    const provider = sessionStorage.getItem(OAUTH_PENDING_KEY);
-    sessionStorage.removeItem(OAUTH_PENDING_KEY);
-    return provider;
-  } catch (_) {
-    return null;
-  }
-}
-
-/** Google: redirect everywhere (works reliably on mobile Chrome). */
-export const signInWithGoogle = () => {
-  markOAuthPending("google");
-  return signInWithRedirect(auth, googleProvider);
-};
+/** Google: redirect everywhere (reliable cross-browser). */
+export const signInWithGoogle = () => signInWithRedirect(auth, googleProvider);
 
 /**
  * Facebook: redirect on desktop; popup on mobile browsers.
- * Facebook redirect often bounces straight back on mobile without showing login
- * (sessionStorage partition / provider quirks). Popup keeps the flow in-tab.
+ * Facebook redirect frequently bounces back to the homepage on mobile without
+ * showing login (storage partitioning); popup keeps the flow in-tab.
  */
 export const signInWithFacebook = () => {
-  configureFacebookProvider();
   if (isMobileBrowser()) {
+    facebookProvider.setCustomParameters({ display: "touch" });
     return signInWithPopup(auth, facebookProvider);
   }
-  markOAuthPending("facebook");
   return signInWithRedirect(auth, facebookProvider);
 };
 
-export const signInWithApple = () => {
-  markOAuthPending("apple");
-  return signInWithRedirect(auth, appleProvider);
-};
+export const signInWithApple = () => signInWithRedirect(auth, appleProvider);
 
-export async function completeOAuthRedirect() {
-  const result = await getRedirectResult(auth);
-  const pending = consumeOAuthPending();
-
-  if (result?.user) {
-    return result;
-  }
-
-  if (pending && !auth.currentUser) {
-    const err = new Error("OAuth redirect did not complete");
-    err.code =
-      pending === "facebook"
-        ? "auth/facebook-redirect-incomplete"
-        : "auth/redirect-incomplete";
-    err.pendingProvider = pending;
-    throw err;
-  }
-
-  return result;
+/**
+ * Resolve to the redirect result if present, or null. Wrapped with a hard
+ * timeout so a slow/hanging Firebase auth call never blocks the splash screen.
+ */
+export function completeOAuthRedirect(timeoutMs = 4000) {
+  const result = getRedirectResult(auth).catch(() => null);
+  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs));
+  return Promise.race([result, timeout]);
 }
 
 const AUTH_ERROR_MESSAGES = {
@@ -150,9 +80,6 @@ const AUTH_ERROR_MESSAGES = {
     "An account already exists with this email using a different sign-in method.",
   "auth/network-request-failed": "Network error. Check your connection and try again.",
   "auth/too-many-requests": "Too many attempts. Please wait a moment and try again.",
-  "auth/facebook-redirect-incomplete":
-    "Facebook sign-in did not complete. Check that lifehub.fit is listed in your Facebook app settings, then try again.",
-  "auth/redirect-incomplete": "Sign-in did not complete. Please try again.",
 };
 
 export function getAuthErrorMessage(err, providerLabel) {

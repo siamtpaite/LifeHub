@@ -3,7 +3,6 @@ import { onAuthStateChanged } from "firebase/auth";
 import Dashboard from "./components/Dashboard";
 import {
   auth,
-  clearOAuthPending,
   completeOAuthRedirect,
   getAuthErrorMessage,
   loginWithEmail,
@@ -56,28 +55,15 @@ function App() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    let redirectChecked = false;
-    let authKnown = false;
-
-    const finishAuthInit = () => {
-      if (redirectChecked && authKnown) {
-        setAuthLoading(false);
-      }
-    };
-
-    completeOAuthRedirect()
-      .catch((err) => {
-        if (err?.code) setAuthError(getAuthErrorMessage(err));
-      })
-      .finally(() => {
-        redirectChecked = true;
-        finishAuthInit();
-      });
+    // Best-effort redirect completion. Errors from this background check are
+    // intentionally swallowed - errors from user-initiated sign-in clicks are
+    // surfaced via the button handlers instead.
+    completeOAuthRedirect();
 
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
+      setAuthLoading(false);
       if (u) {
-        clearOAuthPending();
         await registerPushNotifications(u.uid);
         onForegroundMessage((payload) => {
           const { title, body } = payload.notification || {};
@@ -85,8 +71,6 @@ function App() {
           setTimeout(() => setToast(null), 6000);
         });
       }
-      authKnown = true;
-      finishAuthInit();
     });
     return unsub;
   }, []);
@@ -134,7 +118,6 @@ function App() {
       await signInWithFacebook();
       setLoading(false);
     } catch (err) {
-      clearOAuthPending();
       setAuthError(getAuthErrorMessage(err, "Facebook"));
       setLoading(false);
     }
