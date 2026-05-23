@@ -16,6 +16,24 @@ const FEATURES = [
   { icon: "🤖", title: "AI Advisor", desc: "Get personalised financial and lifestyle insights." },
 ];
 
+function useIsMobile(breakpoint = 860) {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < breakpoint : false
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    setIsMobile(mql.matches);
+    if (mql.addEventListener) mql.addEventListener("change", handler);
+    else mql.addListener(handler);
+    return () => {
+      if (mql.removeEventListener) mql.removeEventListener("change", handler);
+      else mql.removeListener(handler);
+    };
+  }, [breakpoint]);
+  return isMobile;
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -25,6 +43,7 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -107,88 +126,104 @@ function App() {
   }
 
   if (!user) {
-    return (
+    const heroSection = (
       <div style={{
-        minHeight: "100vh",
-        background: "radial-gradient(ellipse at 20% 50%, #0d1f3c 0%, #060a14 50%, #020408 100%)",
-        display: "grid",
-        gridTemplateColumns: "1fr 420px",
-        fontFamily: "'Inter', sans-serif",
-        overflow: "hidden",
+        display: "flex", flexDirection: "column",
+        justifyContent: "center",
+        padding: isMobile ? "32px 24px 48px" : "60px 64px",
+        position: "relative", overflow: "hidden",
       }}>
-        {/* Left: Feature showcase */}
-        <div style={{
-          display: "flex", flexDirection: "column", justifyContent: "center",
-          padding: "60px 64px", position: "relative", overflow: "hidden",
-        }}>
+        {!isMobile && (
           <div style={{
             position: "absolute", top: "20%", left: "10%",
             width: 400, height: 400,
             background: "radial-gradient(circle, rgba(79,142,247,0.12) 0%, transparent 70%)",
             pointerEvents: "none",
           }}/>
+        )}
 
+        {!isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 64 }}>
             <img src="/lifehub-icon.png" alt="LifeHub" style={{ width: 36, height: 36, borderRadius: 10 }}/>
             <span style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: "-0.5px" }}>LifeHub</span>
           </div>
+        )}
 
-          <div style={{ marginBottom: 16 }}>
-            <div style={{
-              fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "#4f8ef7", marginBottom: 16, fontWeight: 500,
-            }}>Your personal life OS</div>
-            <h1 style={{
-              fontSize: 52, fontWeight: 700, color: "#fff",
-              lineHeight: 1.08, letterSpacing: "-1.5px", marginBottom: 20,
-            }}>
-              Everything<br/>about your life,<br/>
-              <span style={{ color: "#4f8ef7" }}>in one place.</span>
-            </h1>
-            <p style={{
-              fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7,
-              maxWidth: 480, fontWeight: 300,
-            }}>
-              LifeHub brings together your warranties, subscriptions, skills, and savings
-              into a single intelligent dashboard — with AI-powered insights and smart alerts.
-            </p>
-          </div>
-
+        <div style={{ marginBottom: 16 }}>
           <div style={{
-            display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 40, maxWidth: 560,
+            fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase",
+            color: "#4f8ef7", marginBottom: isMobile ? 10 : 16, fontWeight: 500,
+          }}>Your personal life OS</div>
+          <h1 style={{
+            fontSize: isMobile ? 32 : 52, fontWeight: 700, color: "#fff",
+            lineHeight: 1.08, letterSpacing: isMobile ? "-0.8px" : "-1.5px",
+            marginBottom: isMobile ? 14 : 20,
           }}>
-            {FEATURES.map(f => (
-              <div key={f.title} style={{
-                padding: "16px 18px",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 12,
-              }}>
-                <div style={{ fontSize: 20, marginBottom: 8 }}>{f.icon}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{f.title}</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{f.desc}</div>
-              </div>
-            ))}
-          </div>
+            {isMobile ? (
+              <>Everything about your life, <span style={{ color: "#4f8ef7" }}>in one place.</span></>
+            ) : (
+              <>
+                Everything<br/>about your life,<br/>
+                <span style={{ color: "#4f8ef7" }}>in one place.</span>
+              </>
+            )}
+          </h1>
+          <p style={{
+            fontSize: isMobile ? 14 : 16, color: "rgba(255,255,255,0.5)",
+            lineHeight: 1.7, maxWidth: 480, fontWeight: 300,
+          }}>
+            LifeHub brings together your warranties, subscriptions, skills, and savings
+            into a single intelligent dashboard — with AI-powered insights and smart alerts.
+          </p>
         </div>
 
-        {/* Right: Auth panel */}
         <div style={{
-          display: "flex", flexDirection: "column", justifyContent: "center",
-          padding: "48px 40px",
-          background: "rgba(255,255,255,0.03)",
-          borderLeft: "1px solid rgba(255,255,255,0.07)",
-          backdropFilter: "blur(20px)",
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr",
+          gap: isMobile ? 10 : 12,
+          marginTop: isMobile ? 24 : 40,
+          maxWidth: 560,
         }}>
-          <h2 style={{
-            fontSize: 24, fontWeight: 700, color: "#fff",
-            letterSpacing: "-0.5px", marginBottom: 6,
-          }}>
-            {isSignup ? "Create your account" : "Welcome back"}
-          </h2>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 32, fontWeight: 300 }}>
-            {isSignup ? "Start managing your life smarter." : "Sign in to your LifeHub."}
-          </p>
+          {FEATURES.map(f => (
+            <div key={f.title} style={{
+              padding: isMobile ? "12px 14px" : "16px 18px",
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 12,
+            }}>
+              <div style={{ fontSize: isMobile ? 18 : 20, marginBottom: 6 }}>{f.icon}</div>
+              <div style={{ fontSize: isMobile ? 12 : 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{f.title}</div>
+              <div style={{ fontSize: isMobile ? 11 : 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{f.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    const authPanel = (
+      <div style={{
+        display: "flex", flexDirection: "column", justifyContent: "center",
+        padding: isMobile ? "32px 24px" : "48px 40px",
+        background: isMobile ? "transparent" : "rgba(255,255,255,0.03)",
+        borderLeft: isMobile ? "none" : "1px solid rgba(255,255,255,0.07)",
+        backdropFilter: isMobile ? "none" : "blur(20px)",
+      }}>
+        {isMobile && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+            <img src="/lifehub-icon.png" alt="LifeHub" style={{ width: 32, height: 32, borderRadius: 8 }}/>
+            <span style={{ fontSize: 18, fontWeight: 700, color: "#fff", letterSpacing: "-0.5px" }}>LifeHub</span>
+          </div>
+        )}
+
+        <h2 style={{
+          fontSize: isMobile ? 22 : 24, fontWeight: 700, color: "#fff",
+          letterSpacing: "-0.5px", marginBottom: 6,
+        }}>
+          {isSignup ? "Create your account" : "Welcome back"}
+        </h2>
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: isMobile ? 24 : 32, fontWeight: 300 }}>
+          {isSignup ? "Start managing your life smarter." : "Sign in to your LifeHub."}
+        </p>
 
           <button
             onClick={handleGoogle}
@@ -313,6 +348,29 @@ function App() {
             </p>
           </div>
         </div>
+    );
+
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "radial-gradient(ellipse at 20% 50%, #0d1f3c 0%, #060a14 50%, #020408 100%)",
+        display: isMobile ? "flex" : "grid",
+        flexDirection: isMobile ? "column" : undefined,
+        gridTemplateColumns: isMobile ? undefined : "1fr 420px",
+        fontFamily: "'Inter', sans-serif",
+        overflowX: "hidden",
+      }}>
+        {isMobile ? (
+          <>
+            {authPanel}
+            {heroSection}
+          </>
+        ) : (
+          <>
+            {heroSection}
+            {authPanel}
+          </>
+        )}
       </div>
     );
   }
