@@ -1,7 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import Dashboard from "./components/Dashboard";
-import { auth, loginWithEmail, logout, registerWithEmail, signInWithGoogle, signInWithFacebook } from "./firebase";
+import {
+  auth,
+  completeOAuthRedirect,
+  getAuthErrorMessage,
+  loginWithEmail,
+  logout,
+  registerWithEmail,
+  signInWithGoogle,
+  signInWithFacebook,
+} from "./firebase";
 import { registerPushNotifications, onForegroundMessage } from "./utils/pushNotifications";
 import { usePlan } from "./usePlan";
 
@@ -46,9 +55,26 @@ function App() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
+    let redirectChecked = false;
+    let authKnown = false;
+
+    const finishAuthInit = () => {
+      if (redirectChecked && authKnown) {
+        setAuthLoading(false);
+      }
+    };
+
+    completeOAuthRedirect()
+      .catch((err) => {
+        if (err?.code) setAuthError(getAuthErrorMessage(err));
+      })
+      .finally(() => {
+        redirectChecked = true;
+        finishAuthInit();
+      });
+
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
-      setAuthLoading(false);
       if (u) {
         await registerPushNotifications(u.uid);
         onForegroundMessage((payload) => {
@@ -57,6 +83,8 @@ function App() {
           setTimeout(() => setToast(null), 6000);
         });
       }
+      authKnown = true;
+      finishAuthInit();
     });
     return unsub;
   }, []);
@@ -92,8 +120,7 @@ function App() {
     try {
       await signInWithGoogle();
     } catch (err) {
-      setAuthError("Google sign-in failed. Please try again.");
-    } finally {
+      setAuthError(getAuthErrorMessage(err, "Google"));
       setLoading(false);
     }
   };
@@ -104,8 +131,7 @@ function App() {
     try {
       await signInWithFacebook();
     } catch (err) {
-      setAuthError("Facebook sign-in failed. Please try again.");
-    } finally {
+      setAuthError(getAuthErrorMessage(err, "Facebook"));
       setLoading(false);
     }
   };
