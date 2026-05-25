@@ -381,6 +381,20 @@ function App() {
         {isMobile ? (
           <>
             {authPanel}
+            <div style={{padding:"0 24px 48px"}}>
+              <p style={{fontSize:14,color:"rgba(255,255,255,0.45)",lineHeight:1.7,marginBottom:20}}>
+                LifeHub brings together your warranties, subscriptions, skills, and savings into a single intelligent dashboard.
+              </p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                {FEATURES.map(f=>(
+                  <div key={f.title} style={{padding:"14px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:12}}>
+                    <div style={{fontSize:22,marginBottom:6}}>{f.icon}</div>
+                    <div style={{fontSize:12,fontWeight:600,color:"#fff",marginBottom:3}}>{f.title}</div>
+                    <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",lineHeight:1.5}}>{f.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </>
         ) : (
           <>
