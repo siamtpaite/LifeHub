@@ -355,12 +355,8 @@ function SplitPanel({ id, children, onScanClick }) {
   const scan = SCANS[id];
   const scanLabel = SCAN_LABELS[id];
   return (
-    <div style={{ display:"flex", height:"100%", overflow:"hidden", width:"100%" }}>
-      <div style={{
-        flex:"0 0 44%", position:"relative",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        padding:"40px 20px 80px",
-      }}>
+    <div className="split" style={{ display:"flex", height:"100%", overflow:"hidden", width:"100%" }}>
+      <div className="hero-side">
         <div>{sphere}</div>
         {scan && scanLabel && (
           <button className="scan-btn" style={{ background:scan }} onClick={onScanClick}>
@@ -368,12 +364,7 @@ function SplitPanel({ id, children, onScanClick }) {
           </button>
         )}
       </div>
-      <div style={{
-        flex:"1", overflowY:"auto",
-        padding:"40px 48px 80px 8px",
-        display:"flex", flexDirection:"column",
-        minWidth:0,
-      }}>
+      <div className="content-side">
         {children}
       </div>
     </div>

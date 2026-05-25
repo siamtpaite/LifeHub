@@ -364,6 +364,7 @@ button{font-family:'Inter',sans-serif;cursor:pointer}
   .sidebar { padding: 8px 0; }
   .nav-item, .tabs button { width: 38px; height: 38px; }
   .hero-side { display: none !important; }
+  .split { flex-direction: column !important; }
   .content-side {
     padding: 24px 20px 80px !important;
     flex: 1 !important;
