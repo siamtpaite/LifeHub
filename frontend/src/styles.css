@@ -385,3 +385,5 @@ button{font-family:'Inter',sans-serif;cursor:pointer}
   .full-panel { padding: 20px 16px; }
   .full-panel-title { font-size: 26px; }
 }
+
+@media (max-width: 860px) { html, body { overflow-y: auto !important; } }
