@@ -381,7 +381,6 @@ function App() {
         {isMobile ? (
           <>
             {authPanel}
-            {heroSection}
           </>
         ) : (
           <>
