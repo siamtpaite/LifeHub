@@ -377,6 +377,7 @@ function App() {
         gridTemplateColumns: isMobile ? undefined : "1fr 420px",
         fontFamily: "'Inter', sans-serif",
         overflowX: "hidden",
+        overflowY: isMobile ? "auto" : "hidden",
       }}>
         {isMobile ? (
           <>
