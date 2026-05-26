@@ -13,7 +13,6 @@ import Auth from "./Auth";
 import Localization from "./Localization";
 import AIAdvisor from "./AIAdvisor";
 import SkillsChat from "./SkillsChat";
-import UpgradePrompt from "./UpgradePrompt";
 
 /* ── Free plan limits ── */
 export const FREE_LIMITS = {
@@ -381,8 +380,6 @@ function Dashboard({ authContext }) {
   const [tab, setTab] = useState(() => localStorage.getItem("lh_tab") || "subscriptions");
   const [currency, setCurrency] = useState("INR");
   const [formOpen, setFormOpen] = useState(false);
-  const [showUpgrade, setShowUpgrade] = useState(false);
-  const [upgradeReason, setUpgradeReason] = useState({});
   const [expanded, setExpanded] = useState(() => localStorage.getItem("lh_sidebar") === "1");
 
   const { isPro, planLoading } = authContext;
@@ -391,12 +388,10 @@ function Dashboard({ authContext }) {
 
   const handleNavClick = (id) => {
     if (!isPro && PRO_ONLY_PANELS.has(id)) {
-      const label = NAV.find(n => n.id === id)?.label || id;
-      setUpgradeReason({
-        title: `${label} — Pro Feature`,
-        description: `${label} is available on the Pro plan. Upgrade to unlock it along with unlimited access to all features.`,
-      });
-      setShowUpgrade(true);
+      // Route directly to Monetisation panel instead of showing overlay with external links
+      setTab("monetisation");
+      localStorage.setItem("lh_tab", "monetisation");
+      setFormOpen(false);
       return;
     }
     setTab(id);
@@ -495,17 +490,6 @@ function Dashboard({ authContext }) {
         <div style={{ position:"absolute",top:0,left:0,right:0,zIndex:5,padding:"6px 16px",background:"rgba(0,0,0,.2)",borderBottom:"1px solid rgba(255,255,255,.05)",display:"flex",alignItems:"center",gap:8 }}>
           <Localization apiBaseUrl={authContext.apiBaseUrl} onCurrencyChange={setCurrency}/>
         </div>
-
-        {/* Upgrade prompt overlay */}
-        {showUpgrade && (
-          <div style={{ position:"absolute", inset:0, zIndex:20, paddingTop:36 }}>
-            <UpgradePrompt
-              title={upgradeReason.title}
-              description={upgradeReason.description}
-              onClose={() => setShowUpgrade(false)}
-            />
-          </div>
-        )}
 
         {/* Panels */}
         <div style={{ position:"absolute", inset:0, paddingTop:50, overflow:"hidden", display:"flex", flexDirection:"column" }}>
