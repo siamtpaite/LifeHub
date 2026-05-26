@@ -46,6 +46,19 @@ export default function Skills({ authContext, formOpen, setFormOpen }) {
     } catch(e){ setError(e.message); }
   };
 
+  const deleteItem = async (id) => {
+    if (!window.confirm("Delete this skill?")) return;
+    try {
+      const t = await user.getIdToken();
+      const r = await fetch(`${apiBaseUrl}/api/skills/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (!r.ok) { const d = await r.json(); throw new Error(d.message); }
+      load();
+    } catch (e) { setError(e.message); }
+  };
+
   const exchange = async () => {
     if (!exchangeId) return;
     try {
@@ -94,16 +107,30 @@ export default function Skills({ authContext, formOpen, setFormOpen }) {
 
       <div className="data-wrap">
         <table className="data-table">
-          <thead><tr><th>Skill</th><th>Offered by</th><th>Credits</th><th>ID</th></tr></thead>
+          <thead><tr><th>Skill</th><th>Offered by</th><th>Credits</th><th>ID</th><th></th></tr></thead>
           <tbody>
-            {items.map(s=>(
-              <tr key={s.id}>
-                <td><strong>{s.skillName}</strong><div style={{fontSize:11,color:"rgba(255,255,255,.35)"}}>{s.description}</div></td>
-                <td>{(s.ownerName||"").split("@")[0]}</td>
-                <td><span className={`badge ${s.credits>2?"b-green":s.credits>0?"b-amber":"b-red"}`}>{s.credits} cr</span></td>
-                <td style={{fontFamily:"monospace",fontSize:10,color:"rgba(255,255,255,.3)"}}>{s.id}</td>
-              </tr>
-            ))}
+            {items.map(s=>{
+              const isMine = s.userId === user.uid || s.ownerName === user.email;
+              return (
+                <tr key={s.id}>
+                  <td><strong>{s.skillName}</strong><div style={{fontSize:11,color:"rgba(255,255,255,.35)"}}>{s.description}</div></td>
+                  <td>{(s.ownerName||"").split("@")[0]}</td>
+                  <td><span className={`badge ${s.credits>2?"b-green":s.credits>0?"b-amber":"b-red"}`}>{s.credits} cr</span></td>
+                  <td style={{fontFamily:"monospace",fontSize:10,color:"rgba(255,255,255,.3)"}}>{s.id}</td>
+                  <td style={{textAlign:"right"}}>
+                    {isMine && (
+                      <button
+                        onClick={()=>deleteItem(s.id)}
+                        style={{background:"none",border:"none",color:"#f87171",cursor:"pointer",fontSize:12,padding:"4px 8px"}}
+                        aria-label={`Delete ${s.skillName}`}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

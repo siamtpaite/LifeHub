@@ -83,6 +83,19 @@ export default function Warranties({ authContext, formOpen, setFormOpen }) {
     finally { setUploading(false); }
   };
 
+  const deleteItem = async (id) => {
+    if (!window.confirm("Delete this warranty?")) return;
+    try {
+      const t = await user.getIdToken();
+      const r = await fetch(`${apiBaseUrl}/api/warranties/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (!r.ok) { const d = await r.json(); throw new Error(d.message); }
+      load();
+    } catch (e) { setError(e.message); }
+  };
+
   const sc = { "Active": "b-green", "Expiring soon": "b-amber", "Expired": "b-red" };
   const expiring = items.filter(w => getStatus(w) === "Expiring soon").length;
   const expired = items.filter(w => getStatus(w) === "Expired").length;
@@ -150,7 +163,7 @@ export default function Warranties({ authContext, formOpen, setFormOpen }) {
         {items.length === 0
           ? <p style={{ color:"rgba(255,255,255,.4)", fontSize:13 }}>No warranties yet. Add your first one above.</p>
           : <table className="data-table">
-            <thead><tr><th>Product</th><th>Expiry</th><th>Receipt</th><th>Status</th></tr></thead>
+            <thead><tr><th>Product</th><th>Expiry</th><th>Receipt</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {items.map(w => {
                 const s = getStatus(w);
@@ -159,6 +172,15 @@ export default function Warranties({ authContext, formOpen, setFormOpen }) {
                   <td>{w.warrantyExpiryDate}</td>
                   <td style={{ fontSize:11, color:"rgba(255,255,255,.4)" }}>{w.receiptText ? w.receiptText.slice(0,28)+"…" : w.receiptFileName || "—"}</td>
                   <td><span className={`badge ${sc[s]||"b-gray"}`}>{s}</span></td>
+                  <td style={{ textAlign:"right" }}>
+                    <button
+                      onClick={() => deleteItem(w.id)}
+                      style={{ background:"none", border:"none", color:"#f87171", cursor:"pointer", fontSize:12, padding:"4px 8px" }}
+                      aria-label={`Delete ${w.productName}`}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>;
               })}
             </tbody>

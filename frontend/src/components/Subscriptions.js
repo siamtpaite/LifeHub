@@ -51,6 +51,19 @@ export default function Subscriptions({ authContext, currency="INR", formOpen, s
     } catch(e){ setError(e.message); }
   };
 
+  const deleteItem = async (id) => {
+    if (!window.confirm("Delete this subscription?")) return;
+    try {
+      const t = await user.getIdToken();
+      const r = await fetch(`${apiBaseUrl}/api/subscriptions/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (!r.ok) { const d = await r.json(); throw new Error(d.message); }
+      load();
+    } catch (e) { setError(e.message); }
+  };
+
   const total = items.reduce((a,s)=>a+Number(s.cost||0),0);
   const sc = {"Active":"b-green","Expiring soon":"b-amber","Expired":"b-red"};
   const getStatus = item => {
@@ -98,7 +111,7 @@ export default function Subscriptions({ authContext, currency="INR", formOpen, s
         {loading ? <p style={{color:"rgba(255,255,255,.4)",fontSize:13}}>Loading…</p> :
         items.length===0 ? <p style={{color:"rgba(255,255,255,.4)",fontSize:13}}>No subscriptions yet. Add your first one above.</p> :
         <table className="data-table">
-          <thead><tr><th>Service</th><th>Cost</th><th>Renewal</th><th>Status</th></tr></thead>
+          <thead><tr><th>Service</th><th>Cost</th><th>Renewal</th><th>Status</th><th></th></tr></thead>
           <tbody>
             {items.map(item=>{
               const status=getStatus(item);
@@ -107,6 +120,15 @@ export default function Subscriptions({ authContext, currency="INR", formOpen, s
                 <td>{fmt(item.cost)}/mo</td>
                 <td>{item.renewalDate}</td>
                 <td><span className={`badge ${sc[status]||"b-gray"}`}>{status}</span></td>
+                <td style={{textAlign:"right"}}>
+                  <button
+                    onClick={()=>deleteItem(item.id)}
+                    style={{background:"none",border:"none",color:"#f87171",cursor:"pointer",fontSize:12,padding:"4px 8px"}}
+                    aria-label={`Delete ${item.name}`}
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>;
             })}
           </tbody>

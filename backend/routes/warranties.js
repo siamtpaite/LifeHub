@@ -81,4 +81,26 @@ router.post("/", requireAuth, async (req, res) => {
   }
 });
 
+router.delete("/:id", requireAuth, async (req, res) => {
+  try {
+    const db = admin.firestore();
+    const { id } = req.params;
+    const docRef = db.collection("warranties").doc(id);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.status(404).json({ message: "Warranty not found." });
+    }
+
+    if (docSnap.data().userId !== req.user.uid) {
+      return res.status(403).json({ message: "Unauthorized." });
+    }
+
+    await docRef.delete();
+    return res.json({ message: "Warranty deleted." });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
