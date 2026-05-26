@@ -103,4 +103,32 @@ router.delete("/:id", requireAuth, async (req, res) => {
   }
 });
 
+router.put("/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { skillName, description } = req.body;
+
+    const docRef = db.collection("skills").doc(id);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.status(404).json({ message: "Skill not found." });
+    }
+
+    if (docSnap.data().userId !== req.user.uid) {
+      return res.status(403).json({ message: "Unauthorized." });
+    }
+
+    const updates = { updatedAt: new Date().toISOString() };
+    if (skillName !== undefined) updates.skillName = skillName;
+    if (description !== undefined) updates.description = description;
+
+    await docRef.update(updates);
+    const updated = await docRef.get();
+    return res.json({ id: updated.id, ...updated.data() });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

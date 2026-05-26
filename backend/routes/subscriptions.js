@@ -67,4 +67,33 @@ router.delete("/:id", requireAuth, async (req, res) => {
   }
 });
 
+router.put("/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, cost, renewalDate } = req.body;
+
+    const docRef = db.collection("subscriptions").doc(id);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.status(404).json({ message: "Subscription not found." });
+    }
+
+    if (docSnap.data().userId !== req.user.uid) {
+      return res.status(403).json({ message: "Unauthorized." });
+    }
+
+    const updates = { updatedAt: new Date().toISOString() };
+    if (name !== undefined) updates.name = name;
+    if (cost !== undefined) updates.cost = Number(cost);
+    if (renewalDate !== undefined) updates.renewalDate = renewalDate;
+
+    await docRef.update(updates);
+    const updated = await docRef.get();
+    return res.json({ id: updated.id, ...updated.data() });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
