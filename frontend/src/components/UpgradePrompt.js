@@ -1,10 +1,11 @@
 /**
  * UpgradePrompt.js
- * Reusable overlay shown when a free user hits a Pro-only feature or limit.
+ * Overlay shown when a free user clicks a Pro-only feature.
+ * Routes to in-app Monetisation panel instead of external links.
  */
 import React from "react";
 
-export default function UpgradePrompt({ title, description, onClose }) {
+export default function UpgradePrompt({ title, description, onClose, onUpgrade }) {
   return (
     <div style={{
       position: "absolute", inset: 0, zIndex: 50,
@@ -35,31 +36,17 @@ export default function UpgradePrompt({ title, description, onClose }) {
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <a
-            href="https://siamtpaite.gumroad.com/l/pmlxwh"
-            target="_blank" rel="noreferrer"
+          <button
+            onClick={onUpgrade}
             style={{
               display: "block", padding: "12px 20px",
               background: "linear-gradient(135deg, #2979ff, #4f8ef7)",
-              borderRadius: 10, color: "#fff",
-              fontSize: 14, fontWeight: 600, textDecoration: "none",
+              borderRadius: 10, color: "#fff", border: "none",
+              fontSize: 14, fontWeight: 600, cursor: "pointer",
             }}
           >
-            Upgrade to Pro — $6.99/mo
-          </a>
-          <a
-            href="https://siamtpaite.gumroad.com/l/ievmvi"
-            target="_blank" rel="noreferrer"
-            style={{
-              display: "block", padding: "12px 20px",
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 10, color: "rgba(255,255,255,0.7)",
-              fontSize: 14, fontWeight: 500, textDecoration: "none",
-            }}
-          >
-            Annual plan — $69.99/yr (save ~$14)
-          </a>
+            View Payment Options
+          </button>
           <a
             href="/docs.html#crypto"
             target="_blank" rel="noreferrer"
@@ -68,7 +55,7 @@ export default function UpgradePrompt({ title, description, onClose }) {
               textDecoration: "none", marginTop: 4,
             }}
           >
-            Pay with crypto instead →
+            Learn about crypto payments →
           </a>
         </div>
 
