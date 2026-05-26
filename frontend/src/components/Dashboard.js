@@ -8,9 +8,7 @@ import Analytics from "./Analytics";
 import Recalls from "./Recalls";
 import Predictions from "./Predictions";
 import Enterprise from "./Enterprise";
-import Tenants from "./Tenants";
 import Audit from "./Audit";
-import Security from "./Security";
 import Auth from "./Auth";
 import Localization from "./Localization";
 import AIAdvisor from "./AIAdvisor";
@@ -301,17 +299,13 @@ const NAV = [
   { id:"ai-advisor", label:"AI Advisor", glow:"rgba(29,78,216,.35)",
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
   { sep:true },
-  { id:"recalls", label:"Recalls", glow:"rgba(220,38,38,.35)",
+  { id:"recalls", label:"Safety Alerts", glow:"rgba(220,38,38,.35)",
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> },
   { id:"enterprise", label:"Enterprise", glow:"rgba(67,56,202,.35)",
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
-  { id:"tenants", label:"Tenants", glow:"rgba(15,118,110,.35)",
-    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
   { sep:true },
   { id:"audit", label:"Audit", glow:"rgba(75,85,99,.35)",
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> },
-  { id:"security", label:"Security", glow:"rgba(5,150,105,.35)",
-    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> },
   { id:"monetisation", label:"Upgrade to Pro", glow:"rgba(234,88,12,.35)",
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> },
   { sep:true },
@@ -324,8 +318,8 @@ const NAV = [
 const THEMES = {
   subscriptions:"theme-green", warranties:"theme-blue", skills:"theme-violet",
   savings:"theme-amber", analytics:"theme-sky", predictions:"theme-pink",
-  recalls:"theme-red", enterprise:"theme-indigo", tenants:"theme-teal",
-  audit:"theme-slate", security:"theme-emerald", monetisation:"theme-orange",
+  recalls:"theme-red", enterprise:"theme-indigo",
+  audit:"theme-slate", monetisation:"theme-orange",
   auth:"theme-slate", "ai-advisor":"theme-blue", "skills-chat":"theme-violet",
 };
 
@@ -560,20 +554,10 @@ function Dashboard({ authContext }) {
               <Enterprise authContext={authContext}/>
             </SplitPanel>
           )}
-          {tab === "tenants" && (
-            <SplitPanel id="tenants" onScanClick={() => setFormOpen(f => !f)}>
-              <Tenants authContext={authContext} formOpen={formOpen} setFormOpen={setFormOpen}/>
-            </SplitPanel>
-          )}
           {tab === "audit" && (
             <div style={{ flex:1, overflow:"hidden", display:"flex", flexDirection:"column", background:"#0b0c0f" }}>
               <Audit authContext={authContext}/>
             </div>
-          )}
-          {tab === "security" && (
-            <SplitPanel id="security">
-              <Security authContext={authContext}/>
-            </SplitPanel>
           )}
           {tab === "monetisation" && (
             <SplitPanel id="monetisation">

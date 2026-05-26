@@ -1,33 +1,39 @@
 const express = require("express");
 const { db } = require("../firebaseConfig");
 const requireAuth = require("../middlewareAuth");
-const { reportRecall, aggregateRecalls } = require("../services/recallService");
+const { aggregateRecalls } = require("../services/recallService");
 
 const router = express.Router();
 
-router.post("/", requireAuth, async (req, res) => {
-  try {
-    const { productName, description, severity } = req.body;
-    if (!productName || !description || !severity) {
-      return res.status(400).json({ message: "productName, description, and severity are required." });
-    }
-
-    const recall = await reportRecall(productName, description, severity);
-    const docRef = await db.collection("recalls").add({
-      ...recall,
-      userId: req.user.uid
-    });
-
-    return res.status(201).json({ id: docRef.id, ...recall });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-});
-
+// GET /api/recalls?products=ProductA,ProductB,ProductC
+// Fetch recalls that match user's products (from their Warranties)
 router.get("/", requireAuth, async (req, res) => {
   try {
-    const snapshot = await db.collection("recalls").orderBy("reportedAt", "desc").get();
-    const recalls = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const { products } = req.query;
+    
+    if (!products) {
+      return res.json({});
+    }
+
+    // Parse comma-separated product names
+    const productList = products.split(",").map(p => p.trim().toLowerCase());
+    
+    // Query recalls collection for matching products
+    const snapshot = await db.collection("recalls")
+      .orderBy("reportedAt", "desc")
+      .get();
+    
+    let recalls = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    
+    // Filter to only recalls for products user owns
+    // (fuzzy match on product names for flexibility)
+    recalls = recalls.filter(recall => {
+      const recallProduct = (recall.product || "").toLowerCase();
+      return productList.some(userProduct => 
+        recallProduct.includes(userProduct) || userProduct.includes(recallProduct.split(" ")[0])
+      );
+    });
+    
     const aggregated = await aggregateRecalls(recalls);
     return res.json(aggregated);
   } catch (err) {
