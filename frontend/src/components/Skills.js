@@ -9,6 +9,10 @@ export default function Skills({ authContext, formOpen, setFormOpen }) {
   const [exchangeId, setExchangeId] = useState("");
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editSkillName, setEditSkillName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const load = async () => {
     try {
@@ -59,6 +63,39 @@ export default function Skills({ authContext, formOpen, setFormOpen }) {
     } catch (e) { setError(e.message); }
   };
 
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditSkillName(item.skillName || "");
+    setEditDescription(item.description || "");
+    setError("");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditSkillName("");
+    setEditDescription("");
+  };
+
+  const saveEdit = async () => {
+    if (!editSkillName) {
+      setError("Skill name is required.");
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const t = await user.getIdToken();
+      const r = await fetch(`${apiBaseUrl}/api/skills/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ skillName: editSkillName, description: editDescription }),
+      });
+      if (!r.ok) { const d = await r.json(); throw new Error(d.message); }
+      cancelEdit();
+      load();
+    } catch (e) { setError(e.message); }
+    finally { setSavingEdit(false); }
+  };
+
   const exchange = async () => {
     if (!exchangeId) return;
     try {
@@ -98,6 +135,28 @@ export default function Skills({ authContext, formOpen, setFormOpen }) {
 
       <button className="add-btn" onClick={handleAddClick} style={{ opacity: atLimit ? 0.5 : 1 }}>+ Offer a skill</button>
 
+      {editingId && (
+        <div className="form-card open">
+          <div className="f-label" style={{ marginBottom:8 }}>Edit skill</div>
+          <div className="form-row">
+            <div className="f-field">
+              <div className="f-label">Skill name</div>
+              <input value={editSkillName} onChange={e => setEditSkillName(e.target.value)} />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="f-field">
+              <div className="f-label">Description</div>
+              <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} />
+            </div>
+          </div>
+          <div className="btn-row">
+            <button className="btn btn-light" onClick={saveEdit} disabled={savingEdit}>{savingEdit ? "Saving…" : "Save"}</button>
+            <button className="btn btn-ghost" onClick={cancelEdit} disabled={savingEdit}>Cancel</button>
+          </div>
+        </div>
+      )}
+
       <div style={{display:"flex",gap:8,marginBottom:16}}>
         <input value={exchangeId} placeholder="Skill ID to exchange" onChange={e=>setExchangeId(e.target.value)} style={{flex:1}}/>
         <button className="btn btn-ghost" style={{flexShrink:0}} onClick={exchange}>Exchange (-1 cr)</button>
@@ -117,15 +176,24 @@ export default function Skills({ authContext, formOpen, setFormOpen }) {
                   <td>{(s.ownerName||"").split("@")[0]}</td>
                   <td><span className={`badge ${s.credits>2?"b-green":s.credits>0?"b-amber":"b-red"}`}>{s.credits} cr</span></td>
                   <td style={{fontFamily:"monospace",fontSize:10,color:"rgba(255,255,255,.3)"}}>{s.id}</td>
-                  <td style={{textAlign:"right"}}>
+                  <td style={{textAlign:"right",whiteSpace:"nowrap"}}>
                     {isMine && (
-                      <button
-                        onClick={()=>deleteItem(s.id)}
-                        style={{background:"none",border:"none",color:"#f87171",cursor:"pointer",fontSize:12,padding:"4px 8px"}}
-                        aria-label={`Delete ${s.skillName}`}
-                      >
-                        Delete
-                      </button>
+                      <>
+                        <button
+                          onClick={()=>startEdit(s)}
+                          style={{background:"none",border:"none",color:"#60a5fa",cursor:"pointer",fontSize:12,padding:"4px 8px"}}
+                          aria-label={`Edit ${s.skillName}`}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={()=>deleteItem(s.id)}
+                          style={{background:"none",border:"none",color:"#f87171",cursor:"pointer",fontSize:12,padding:"4px 8px"}}
+                          aria-label={`Delete ${s.skillName}`}
+                        >
+                          Delete
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>

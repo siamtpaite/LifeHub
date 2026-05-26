@@ -10,6 +10,11 @@ export default function Subscriptions({ authContext, currency="INR", formOpen, s
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editCost, setEditCost] = useState("");
+  const [editRenewalDate, setEditRenewalDate] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const fmt = v => new Intl.NumberFormat(undefined,{style:"currency",currency}).format(Number(v||0));
 
@@ -64,6 +69,41 @@ export default function Subscriptions({ authContext, currency="INR", formOpen, s
     } catch (e) { setError(e.message); }
   };
 
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditName(item.name || "");
+    setEditCost(item.cost ?? "");
+    setEditRenewalDate(item.renewalDate || "");
+    setError("");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditName("");
+    setEditCost("");
+    setEditRenewalDate("");
+  };
+
+  const saveEdit = async () => {
+    if (!editName || !editRenewalDate) {
+      setError("Name and renewal date are required.");
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const t = await user.getIdToken();
+      const r = await fetch(`${apiBaseUrl}/api/subscriptions/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ name: editName, cost: editCost, renewalDate: editRenewalDate }),
+      });
+      if (!r.ok) { const d = await r.json(); throw new Error(d.message); }
+      cancelEdit();
+      load();
+    } catch (e) { setError(e.message); }
+    finally { setSavingEdit(false); }
+  };
+
   const total = items.reduce((a,s)=>a+Number(s.cost||0),0);
   const sc = {"Active":"b-green","Expiring soon":"b-amber","Expired":"b-red"};
   const getStatus = item => {
@@ -101,6 +141,21 @@ export default function Subscriptions({ authContext, currency="INR", formOpen, s
         </div>
       </div>
 
+      {editingId && (
+        <div className="form-card open">
+          <div className="f-label" style={{ marginBottom:8 }}>Edit subscription</div>
+          <div className="form-row">
+            <div className="f-field"><div className="f-label">Service</div><input value={editName} onChange={e=>setEditName(e.target.value)}/></div>
+            <div className="f-field"><div className="f-label">Cost / mo</div><input type="number" step="0.01" value={editCost} onChange={e=>setEditCost(e.target.value)}/></div>
+            <div className="f-field"><div className="f-label">Renewal date</div><input type="date" value={editRenewalDate} onChange={e=>setEditRenewalDate(e.target.value)}/></div>
+          </div>
+          <div className="btn-row">
+            <button className="btn btn-light" onClick={saveEdit} disabled={savingEdit}>{savingEdit ? "Saving…" : "Save"}</button>
+            <button className="btn btn-ghost" onClick={cancelEdit} disabled={savingEdit}>Cancel</button>
+          </div>
+        </div>
+      )}
+
       <button className="add-btn" onClick={handleAddClick} style={{ opacity: atLimit ? 0.5 : 1 }}>
         + Add subscription
       </button>
@@ -120,7 +175,14 @@ export default function Subscriptions({ authContext, currency="INR", formOpen, s
                 <td>{fmt(item.cost)}/mo</td>
                 <td>{item.renewalDate}</td>
                 <td><span className={`badge ${sc[status]||"b-gray"}`}>{status}</span></td>
-                <td style={{textAlign:"right"}}>
+                <td style={{textAlign:"right",whiteSpace:"nowrap"}}>
+                  <button
+                    onClick={()=>startEdit(item)}
+                    style={{background:"none",border:"none",color:"#60a5fa",cursor:"pointer",fontSize:12,padding:"4px 8px"}}
+                    aria-label={`Edit ${item.name}`}
+                  >
+                    Edit
+                  </button>
                   <button
                     onClick={()=>deleteItem(item.id)}
                     style={{background:"none",border:"none",color:"#f87171",cursor:"pointer",fontSize:12,padding:"4px 8px"}}

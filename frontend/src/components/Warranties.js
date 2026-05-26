@@ -15,6 +15,10 @@ export default function Warranties({ authContext, formOpen, setFormOpen }) {
   const [ocrStatus, setOcrStatus] = useState(null);
   const [ocrResult, setOcrResult] = useState("");
   const [needsManual, setNeedsManual] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editProductName, setEditProductName] = useState("");
+  const [editWarrantyExpiryDate, setEditWarrantyExpiryDate] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   const productRef = useRef(null);
 
   const load = async () => {
@@ -96,6 +100,39 @@ export default function Warranties({ authContext, formOpen, setFormOpen }) {
     } catch (e) { setError(e.message); }
   };
 
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditProductName(item.productName || "");
+    setEditWarrantyExpiryDate(item.warrantyExpiryDate || "");
+    setError("");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditProductName("");
+    setEditWarrantyExpiryDate("");
+  };
+
+  const saveEdit = async () => {
+    if (!editProductName || !editWarrantyExpiryDate) {
+      setError("Product name and expiry date are required.");
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const t = await user.getIdToken();
+      const r = await fetch(`${apiBaseUrl}/api/warranties/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ productName: editProductName, warrantyExpiryDate: editWarrantyExpiryDate }),
+      });
+      if (!r.ok) { const d = await r.json(); throw new Error(d.message); }
+      cancelEdit();
+      load();
+    } catch (e) { setError(e.message); }
+    finally { setSavingEdit(false); }
+  };
+
   const sc = { "Active": "b-green", "Expiring soon": "b-amber", "Expired": "b-red" };
   const expiring = items.filter(w => getStatus(w) === "Expiring soon").length;
   const expired = items.filter(w => getStatus(w) === "Expired").length;
@@ -157,6 +194,26 @@ export default function Warranties({ authContext, formOpen, setFormOpen }) {
 
       <button className="add-btn" onClick={handleAddClick} style={{ opacity: atLimit ? 0.5 : 1 }}>+ Add warranty</button>
 
+      {editingId && (
+        <div className="form-card open">
+          <div className="f-label" style={{ marginBottom:8 }}>Edit warranty</div>
+          <div className="form-row">
+            <div className="f-field">
+              <div className="f-label">Product name</div>
+              <input value={editProductName} onChange={e => setEditProductName(e.target.value)} />
+            </div>
+            <div className="f-field">
+              <div className="f-label">Warranty expiry</div>
+              <input type="date" value={editWarrantyExpiryDate} onChange={e => setEditWarrantyExpiryDate(e.target.value)} />
+            </div>
+          </div>
+          <div className="btn-row">
+            <button className="btn btn-light" onClick={saveEdit} disabled={savingEdit}>{savingEdit ? "Saving…" : "Save"}</button>
+            <button className="btn btn-ghost" onClick={cancelEdit} disabled={savingEdit}>Cancel</button>
+          </div>
+        </div>
+      )}
+
       {error && <p style={{ color:"#f87171", fontSize:13, marginBottom:8 }}>{error}</p>}
 
       <div className="data-wrap">
@@ -172,7 +229,14 @@ export default function Warranties({ authContext, formOpen, setFormOpen }) {
                   <td>{w.warrantyExpiryDate}</td>
                   <td style={{ fontSize:11, color:"rgba(255,255,255,.4)" }}>{w.receiptText ? w.receiptText.slice(0,28)+"…" : w.receiptFileName || "—"}</td>
                   <td><span className={`badge ${sc[s]||"b-gray"}`}>{s}</span></td>
-                  <td style={{ textAlign:"right" }}>
+                  <td style={{ textAlign:"right", whiteSpace:"nowrap" }}>
+                    <button
+                      onClick={() => startEdit(w)}
+                      style={{ background:"none", border:"none", color:"#60a5fa", cursor:"pointer", fontSize:12, padding:"4px 8px" }}
+                      aria-label={`Edit ${w.productName}`}
+                    >
+                      Edit
+                    </button>
                     <button
                       onClick={() => deleteItem(w.id)}
                       style={{ background:"none", border:"none", color:"#f87171", cursor:"pointer", fontSize:12, padding:"4px 8px" }}
