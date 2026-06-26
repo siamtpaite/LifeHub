@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "457163791884-bek6s3k0eo1n72ua2k0m9el4iesbc243.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fit.lifehub.app",
+            "certificate_hash": "35cf34f629d9b43f2fc3ef439b9bda331349a9fd"
+          }
+        },
+        {
+          "client_id": "457163791884-m4n9df9p1mhrhni3fu3g5a1glecsh78g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fit.lifehub.app",
+            "certificate_hash": "abbd0a5005a4308c60bbebbcb883e515a427b17c"
+          }
+        },
+        {
           "client_id": "457163791884-u8uidgh5bphik0fcffba77na1fne6rhd.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,6 +45,13 @@
             {
               "client_id": "457163791884-u8uidgh5bphik0fcffba77na1fne6rhd.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "457163791884-jauqb0f1rubulf7ohcgnv77u7qgqqs1m.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "fit.lifehub.app"
+              }
             }
           ]
         }

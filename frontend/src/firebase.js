@@ -5,6 +5,7 @@ import {
   FacebookAuthProvider,
   OAuthProvider,
   signInWithRedirect,
+  signInWithCredential,
   getRedirectResult,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -32,16 +33,24 @@ const googleProvider = new GoogleAuthProvider();
 const facebookProvider = new FacebookAuthProvider();
 const appleProvider = new OAuthProvider("apple.com");
 
+const isNative = !!(window.Capacitor?.isNativePlatform?.());
+
 /**
- * Redirect-based OAuth for all providers and devices.
- * Requires REACT_APP_FIREBASE_AUTH_DOMAIN=www.lifehub.fit in production and
- * vercel.json proxy of /__/auth/* → lifehub-db6bb.firebaseapp.com.
- *
- * Facebook: Firebase always requests email + public_profile. If Meta shows
- * "Invalid Scopes: email", add email under Use cases → Facebook Login → Permissions
- * in developers.facebook.com (not fixable from client code alone).
+ * Google Sign-In.
+ * Native (Android/iOS): uses @codetrix-studio/capacitor-google-auth — native
+ * account picker, no browser redirect needed.
+ * Web: redirect-based flow via Firebase Auth.
  */
-export const signInWithGoogle = () => signInWithRedirect(auth, googleProvider);
+export async function signInWithGoogle() {
+  if (isNative) {
+    const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
+    const googleUser = await GoogleAuth.signIn();
+    const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
+    return signInWithCredential(auth, credential);
+  }
+  return signInWithRedirect(auth, googleProvider);
+}
+
 export const signInWithFacebook = () => signInWithRedirect(auth, facebookProvider);
 export const signInWithApple = () => signInWithRedirect(auth, appleProvider);
 
