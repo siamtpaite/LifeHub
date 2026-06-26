@@ -127,4 +127,74 @@ router.post("/crypto/verify", async (req, res) => {
   }
 });
 
+// ─── RevenueCat webhook ───────────────────────────────────────────────────────
+// RevenueCat → Dashboard → Integrations → Webhooks → set Authorization header
+// URL: https://lifehub-bay.vercel.app/api/monetisation/revenuecat/webhook
+//
+// Event types handled:
+//   INITIAL_PURCHASE, RENEWAL, UNCANCELLATION, PRODUCT_CHANGE  → upgrade / extend
+//   EXPIRATION                                                  → downgrade to free
+//   CANCELLATION                                                → no-op (access runs to period end)
+
+const RC_PURCHASE_EVENTS = new Set([
+  "INITIAL_PURCHASE",
+  "RENEWAL",
+  "UNCANCELLATION",
+  "PRODUCT_CHANGE",
+]);
+
+router.post("/revenuecat/webhook", express.json(), async (req, res) => {
+  // Verify the shared secret RevenueCat sends in the Authorization header
+  const secret = process.env.REVENUECAT_WEBHOOK_SECRET;
+  if (secret && req.headers["authorization"] !== secret) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const event = req.body?.event ?? req.body;
+  const { type, app_user_id, product_id, expiration_at_ms } = event ?? {};
+
+  if (!type || !app_user_id) {
+    return res.status(400).json({ error: "Missing type or app_user_id" });
+  }
+
+  try {
+    if (RC_PURCHASE_EVENTS.has(type)) {
+      // Determine plan from product ID
+      const plan = product_id?.includes("yearly") ? "yearly" : "monthly";
+
+      // Use the authoritative expiry RevenueCat provides when available
+      const expiryOverride = expiration_at_ms
+        ? new Date(Number(expiration_at_ms))
+        : null;
+
+      await upgradePlanByUid(app_user_id, plan, {
+        source: "revenuecat",
+        productId: product_id,
+        store: event.store,
+        rcEventType: type,
+      }, expiryOverride);
+
+      console.log(`[RevenueCat] ${type}: upgraded ${app_user_id} → ${plan}`);
+    } else if (type === "EXPIRATION") {
+      // Downgrade: clear plan and expiry so usePlan falls back to "free"
+      const admin = require("firebase-admin");
+      const db = admin.firestore();
+      await db.collection("users").doc(app_user_id).set({
+        plan: "free",
+        planExpiry: null,
+        planMeta: { source: "revenuecat", rcEventType: type },
+      }, { merge: true });
+      console.log(`[RevenueCat] EXPIRATION: downgraded ${app_user_id} → free`);
+    } else {
+      console.log(`[RevenueCat] Unhandled event type: ${type}`);
+    }
+  } catch (err) {
+    console.error("[RevenueCat] Webhook error:", err.message);
+    // Return 200 so RevenueCat doesn't retry — log the error for investigation
+    return res.status(200).json({ received: true, error: err.message });
+  }
+
+  return res.status(200).json({ received: true });
+});
+
 module.exports = router;

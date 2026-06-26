@@ -13,6 +13,7 @@ import {
 } from "./firebase";
 import { registerPushNotifications, onForegroundMessage } from "./utils/pushNotifications";
 import { usePlan } from "./usePlan";
+import { initIAP } from "./services/iap";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
@@ -55,30 +56,47 @@ function App() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    completeOAuthRedirect()
-      .catch((err) => {
-        if (err?.code) {
-          const providerId = err.customData?._tokenResponse?.providerId;
-          const label =
-            providerId === "facebook.com" ? "Facebook" :
-            providerId === "google.com" ? "Google" : undefined;
-          setAuthError(getAuthErrorMessage(err, label));
-        }
-      });
+    const isNative = !!(window.Capacitor?.isNativePlatform?.());
+
+    // getRedirectResult blocks onAuthStateChanged in Firebase v9+ until it resolves.
+    // In native Capacitor there is no OAuth redirect so skip it entirely to avoid the delay.
+    if (!isNative) {
+      completeOAuthRedirect()
+        .catch((err) => {
+          if (err?.code) {
+            const providerId = err.customData?._tokenResponse?.providerId;
+            const label =
+              providerId === "facebook.com" ? "Facebook" :
+              providerId === "google.com" ? "Google" : undefined;
+            setAuthError(getAuthErrorMessage(err, label));
+          }
+        });
+    }
+
+    // Hard fallback: if onAuthStateChanged never fires (e.g. network issue), unblock UI after 6s.
+    const fallback = setTimeout(() => setAuthLoading(false), 6000);
 
     const unsub = onAuthStateChanged(auth, async (u) => {
+      clearTimeout(fallback);
       setUser(u);
       setAuthLoading(false);
       if (u) {
-        await registerPushNotifications(u.uid);
-        onForegroundMessage((payload) => {
-          const { title, body } = payload.notification || {};
-          setToast({ title, body });
-          setTimeout(() => setToast(null), 6000);
-        });
+        // Initialize RevenueCat with Firebase UID so store purchases
+        // are tied to the same user the backend webhook upgrades.
+        initIAP(u.uid).catch((e) => console.warn("[IAP] init error:", e));
+
+        if (!isNative) {
+          await registerPushNotifications(u.uid);
+          onForegroundMessage((payload) => {
+            const { title, body } = payload.notification || {};
+            setToast({ title, body });
+            setTimeout(() => setToast(null), 6000);
+          });
+        }
       }
     });
-    return unsub;
+
+    return () => { unsub(); clearTimeout(fallback); };
   }, []);
 
   const { plan, isPro, planExpiry, planLoading } = usePlan(user);

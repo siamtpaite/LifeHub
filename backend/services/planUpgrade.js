@@ -26,14 +26,20 @@ const PLAN_DURATIONS = {
 
 /**
  * Upgrade a user's plan by Firebase UID.
+ * @param {string} uid
+ * @param {string} plan  - "monthly" | "yearly"
+ * @param {object} meta  - arbitrary metadata stored alongside the plan
+ * @param {Date|null} expiryOverride - explicit expiry from RevenueCat; falls back to duration-based
  */
-async function upgradePlanByUid(uid, plan, meta = {}) {
+async function upgradePlanByUid(uid, plan, meta = {}, expiryOverride = null) {
   const db = getFirestore();
   const days = PLAN_DURATIONS[plan];
   if (!days) throw new Error(`Unknown plan: ${plan}`);
 
   const now = new Date();
-  const expiry = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+  const expiry = expiryOverride instanceof Date
+    ? expiryOverride
+    : new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
 
   await db.collection("users").doc(uid).set({
     plan,
