@@ -18,7 +18,7 @@ async function getRC() {
   if (!isNative) return null;
   if (_Purchases) return _Purchases;
   try {
-    const mod = await import("@revenuecat/purchases-capacitor");
+    const mod = await import(/* webpackIgnore: true */ "@revenuecat/purchases-capacitor");
     _Purchases = mod.Purchases;
     return _Purchases;
   } catch (e) {
