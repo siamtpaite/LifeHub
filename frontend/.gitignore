@@ -2,3 +2,4 @@
 .env*.local
 public/service-worker.js
 .env*
+node_modules/

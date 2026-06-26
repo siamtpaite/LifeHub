@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>457163791884-jauqb0f1rubulf7ohcgnv77u7qgqqs1m.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.457163791884-jauqb0f1rubulf7ohcgnv77u7qgqqs1m</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAYjEf9l2f44JhUKbjip8k7brQ5V5V4IbM</string>
+	<key>GCM_SENDER_ID</key>
+	<string>457163791884</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>fit.lifehub.app</string>
+	<key>PROJECT_ID</key>
+	<string>lifehub-db6bb</string>
+	<key>STORAGE_BUCKET</key>
+	<string>lifehub-db6bb.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:457163791884:ios:5de1f28a736c92451b9829</string>
+</dict>
+</plist>

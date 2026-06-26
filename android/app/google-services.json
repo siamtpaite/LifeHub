@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "457163791884",
+    "project_id": "lifehub-db6bb",
+    "storage_bucket": "lifehub-db6bb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:457163791884:android:1f0cd173c53cb1661b9829",
+        "android_client_info": {
+          "package_name": "fit.lifehub.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "457163791884-u8uidgh5bphik0fcffba77na1fne6rhd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5Z5nibEhqDHcTd_GrjYea_l0VSWgcTNA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "457163791884-u8uidgh5bphik0fcffba77na1fne6rhd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
