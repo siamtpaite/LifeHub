@@ -43,7 +43,7 @@ const isNative = !!(window.Capacitor?.isNativePlatform?.());
  */
 export async function signInWithGoogle() {
   if (isNative) {
-    const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
+    const { GoogleAuth } = await import(/* webpackIgnore: true */ "@codetrix-studio/capacitor-google-auth");
     const googleUser = await GoogleAuth.signIn();
     const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
     return signInWithCredential(auth, credential);
