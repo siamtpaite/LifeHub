@@ -2,6 +2,9 @@
   "name": "lifehub-frontend",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
     "firebase": "^10.14.1",
     "react": "^18.3.1",
