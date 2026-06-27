@@ -70,7 +70,7 @@ export async function signInWithGoogle() {
   }
 
   if (isIOS) {
-    const { registerPlugin } = await import("@capacitor/core");
+    const { registerPlugin } = await import(/* webpackIgnore: true */ "@capacitor/core");
     const NativeGoogleAuth = registerPlugin("NativeGoogleAuth");
     const result = await NativeGoogleAuth.signIn();
     if (result.error) {
