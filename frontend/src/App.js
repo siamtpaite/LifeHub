@@ -69,7 +69,16 @@ function App() {
     if (!isNative || isIOS) {
       completeOAuthRedirect()
         .catch((err) => {
-          if (err?.code) {
+          // Suppress infrastructure-level errors that fire on every page load when
+          // no OAuth redirect is pending (e.g. auth/internal-error when the Firebase
+          // auth iframe can't resolve). Only surface real OAuth flow failures to the user.
+          const SILENT_CODES = new Set([
+            "auth/internal-error",
+            "auth/network-request-failed",
+            "auth/missing-iframe-start",
+            "auth/missing-or-invalid-nonce",
+          ]);
+          if (err?.code && !SILENT_CODES.has(err.code)) {
             const providerId = err.customData?._tokenResponse?.providerId;
             const label =
               providerId === "facebook.com" ? "Facebook" :
