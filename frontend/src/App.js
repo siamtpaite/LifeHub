@@ -67,11 +67,20 @@ function App() {
     // Skip for Android native (uses native Google plugin, not redirect), but run for iOS
     // native since iOS uses signInWithRedirect (popup hangs in WKWebView).
     if (!isNative || isIOS) {
+      // Read and immediately clear the flag set by signInWithRedirect callers.
+      // Errors from getRedirectResult are only shown when the user actually
+      // initiated a redirect this session — suppresses spurious errors on cold loads.
+      const hadPendingRedirect = (() => {
+        try {
+          const v = sessionStorage.getItem("lh_redirectPending") === "1";
+          sessionStorage.removeItem("lh_redirectPending");
+          return v;
+        } catch (_) { return false; }
+      })();
+
       completeOAuthRedirect()
         .catch((err) => {
-          // Suppress infrastructure-level errors that fire on every page load when
-          // no OAuth redirect is pending (e.g. auth/internal-error when the Firebase
-          // auth iframe can't resolve). Only surface real OAuth flow failures to the user.
+          if (!hadPendingRedirect) return;
           const SILENT_CODES = new Set([
             "auth/internal-error",
             "auth/network-request-failed",

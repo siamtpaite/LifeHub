@@ -83,6 +83,7 @@ export async function signInWithGoogle() {
     return signInWithCredential(auth, credential);
   }
 
+  try { sessionStorage.setItem("lh_redirectPending", "1"); } catch (_) {}
   return signInWithRedirect(auth, googleProvider);
 }
 
@@ -96,10 +97,14 @@ export const signInWithFacebook = () => {
       })
     );
   }
+  try { sessionStorage.setItem("lh_redirectPending", "1"); } catch (_) {}
   return signInWithRedirect(auth, facebookProvider);
 };
 
-export const signInWithApple = () => signInWithRedirect(auth, appleProvider);
+export const signInWithApple = () => {
+  try { sessionStorage.setItem("lh_redirectPending", "1"); } catch (_) {}
+  return signInWithRedirect(auth, appleProvider);
+};
 
 /**
  * Complete OAuth redirect when returning to the app. Rejects on real auth errors
