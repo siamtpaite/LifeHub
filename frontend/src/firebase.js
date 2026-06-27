@@ -1,8 +1,8 @@
 import { initializeApp } from "firebase/app";
 import {
+  getAuth,
   initializeAuth,
   inMemoryPersistence,
-  browserLocalPersistence,
   GoogleAuthProvider,
   FacebookAuthProvider,
   OAuthProvider,
@@ -32,13 +32,17 @@ const isNative = !!(window.Capacitor?.isNativePlatform?.());
 const isAndroid = isNative && window.Capacitor?.getPlatform?.() === "android";
 const isIOS = isNative && window.Capacitor?.getPlatform?.() === "ios";
 
-// On native (WKWebView / Android WebView), IndexedDB operations can hang indefinitely,
-// blocking signInWithCredential forever. inMemoryPersistence avoids all storage I/O.
-// Auth state survives backgrounding (the WebView process stays alive); only a full
-// app kill requires re-login, which is acceptable for now.
-export const auth = initializeAuth(app, {
-  persistence: isNative ? inMemoryPersistence : browserLocalPersistence,
-});
+// Native WebViews (WKWebView / Android WebView): IndexedDB can hang indefinitely,
+// so use inMemoryPersistence to avoid all storage I/O. Auth state survives
+// backgrounding (the WebView process stays alive); only a full app kill requires
+// re-login, which is acceptable.
+//
+// Web/PWA: getAuth(app) uses browserLocalPersistence and automatically registers
+// browserPopupRedirectResolver — required for signInWithRedirect to work. Using
+// initializeAuth without popupRedirectResolver breaks web redirect sign-in.
+export const auth = isNative
+  ? initializeAuth(app, { persistence: inMemoryPersistence })
+  : getAuth(app);
 export const storage = getStorage(app);
 export const db = getFirestore(app);
 
