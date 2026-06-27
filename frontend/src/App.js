@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import Dashboard from "./components/Dashboard";
 import {
@@ -13,7 +13,7 @@ import {
 } from "./firebase";
 import { registerPushNotifications, onForegroundMessage } from "./utils/pushNotifications";
 import { usePlan } from "./usePlan";
-import { initIAP } from "./services/iap";
+import { initIAP, getCurrentCustomerInfo, hasProEntitlement } from "./services/iap";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
@@ -53,14 +53,20 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
+  // Set to true when RevenueCat confirms an active Pro entitlement before the
+  // backend webhook has had time to update Firestore. Acts as a local override
+  // so Pro panels unlock immediately after purchase without a page reload.
+  const [rcProOverride, setRcProOverride] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
     const isNative = !!(window.Capacitor?.isNativePlatform?.());
+    const isIOS = isNative && window.Capacitor?.getPlatform?.() === "ios";
 
     // getRedirectResult blocks onAuthStateChanged in Firebase v9+ until it resolves.
-    // In native Capacitor there is no OAuth redirect so skip it entirely to avoid the delay.
-    if (!isNative) {
+    // Skip for Android native (uses native Google plugin, not redirect), but run for iOS
+    // native since iOS uses signInWithRedirect (popup hangs in WKWebView).
+    if (!isNative || isIOS) {
       completeOAuthRedirect()
         .catch((err) => {
           if (err?.code) {
@@ -83,7 +89,14 @@ function App() {
       if (u) {
         // Initialize RevenueCat with Firebase UID so store purchases
         // are tied to the same user the backend webhook upgrades.
-        initIAP(u.uid).catch((e) => console.warn("[IAP] init error:", e));
+        initIAP(u.uid)
+          .then(() => getCurrentCustomerInfo())
+          .then((customerInfo) => {
+            // If RevenueCat already has an active Pro entitlement (returning subscriber),
+            // grant Pro immediately while Firestore syncs via webhook.
+            if (hasProEntitlement(customerInfo)) setRcProOverride(true);
+          })
+          .catch((e) => console.warn("[IAP] startup check error:", e));
 
         if (!isNative) {
           await registerPushNotifications(u.uid);
@@ -99,8 +112,12 @@ function App() {
     return () => { unsub(); clearTimeout(fallback); };
   }, []);
 
-  const { plan, isPro, planExpiry, planLoading } = usePlan(user);
-  const authContext = useMemo(() => ({ user, apiBaseUrl: API_BASE_URL, plan, isPro, planExpiry, planLoading }), [user, plan, isPro, planExpiry, planLoading]);
+  const { plan, isPro, planExpiry, planLoading } = usePlan(user, rcProOverride);
+  const onProGranted = useCallback(() => setRcProOverride(true), []);
+  const authContext = useMemo(
+    () => ({ user, logout, apiBaseUrl: API_BASE_URL, plan, isPro, planExpiry, planLoading, onProGranted }),
+    [user, plan, isPro, planExpiry, planLoading, onProGranted]
+  );
 
   const handleEmailAuth = async (e) => {
     e.preventDefault();
@@ -127,8 +144,12 @@ function App() {
   const handleGoogle = async () => {
     setAuthError("");
     setLoading(true);
+    // iOS: NativeGoogleAuthPlugin uses ASWebAuthenticationSession which always resolves or
+    // rejects — no timeout needed (and a short timeout would kill mid-auth on Google's page).
+    // Web/Android: redirect navigates away or native plugin resolves.
     try {
       await signInWithGoogle();
+      setLoading(false);
     } catch (err) {
       setAuthError(getAuthErrorMessage(err, "Google"));
       setLoading(false);
@@ -140,6 +161,7 @@ function App() {
     setLoading(true);
     try {
       await signInWithFacebook();
+      setLoading(false);
     } catch (err) {
       setAuthError(getAuthErrorMessage(err, "Facebook"));
       setLoading(false);
@@ -427,27 +449,6 @@ function App() {
 
   return (
     <div style={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <div style={{
-        position: "fixed", top: 8, right: 12, zIndex: 100,
-        display: "flex", alignItems: "center", gap: 10,
-      }}>
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,.3)" }}>
-          {user.displayName || user.email}
-        </span>
-        <button
-          onClick={logout}
-          style={{
-            background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)",
-            color: "rgba(255,255,255,.4)", borderRadius: 6, padding: "4px 12px",
-            fontSize: 12, fontFamily: "Inter,sans-serif", cursor: "pointer",
-          }}
-          onMouseOver={e => { e.target.style.color = "#ff5c5c"; e.target.style.borderColor = "rgba(255,92,92,.4)"; }}
-          onMouseOut={e => { e.target.style.color = "rgba(255,255,255,.4)"; e.target.style.borderColor = "rgba(255,255,255,.1)"; }}
-        >
-          Sign out
-        </button>
-      </div>
-
       {toast && (
         <div style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 999,

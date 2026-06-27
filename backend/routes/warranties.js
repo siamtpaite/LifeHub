@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const admin = require("firebase-admin");
 const requireAuth = require("../middlewareAuth");
+const { requireProOrLimit } = require("../services/planCheck");
 
 router.get("/", requireAuth, async (req, res) => {
   try {
@@ -15,7 +16,7 @@ router.get("/", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, requireProOrLimit("warranties", 3), async (req, res) => {
   try {
     const db = admin.firestore();
     const { productName, warrantyExpiryDate, receiptUrl, receiptImage, receiptFileName } = req.body;

@@ -1,12 +1,13 @@
 const express = require("express");
 const { db } = require("../firebaseConfig");
 const requireAuth = require("../middlewareAuth");
+const { requirePro } = require("../services/planCheck");
 const { aggregateFailureTrends } = require("../services/trendAggregator");
 const { predictResale } = require("../services/aiPrediction");
 
 const router = express.Router();
 
-router.get("/", requireAuth, async (req, res) => {
+router.get("/", requireAuth, requirePro(), async (req, res) => {
   try {
     const [warrantiesSnap, recallsSnap] = await Promise.all([
       db.collection("warranties").where("userId", "==", req.user.uid).get(),

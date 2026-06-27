@@ -1,11 +1,12 @@
 const express = require("express");
 const { db } = require("../firebaseConfig");
 const requireAuth = require("../middlewareAuth");
+const { requireProOrLimit } = require("../services/planCheck");
 const fetchSubscriptions = require("../utils/subscriptionAPI");
 
 const router = express.Router();
 
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, requireProOrLimit("subscriptions", 5), async (req, res) => {
   try {
     const { name, cost, renewalDate } = req.body;
 

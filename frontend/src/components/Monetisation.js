@@ -297,7 +297,7 @@ function WebUpgradePanel({ authContext }) {
 // ─── Root export — routes to the right panel ─────────────────────────────────
 
 export default function Monetisation({ authContext }) {
-  const { isPro, planExpiry } = authContext;
+  const { isPro, planExpiry, onProGranted } = authContext;
 
   if (isNative) {
     return (
@@ -305,9 +305,9 @@ export default function Monetisation({ authContext }) {
         isPro={isPro}
         planExpiry={planExpiry}
         onProGranted={() => {
-          // Firestore will reflect PRO via RevenueCat webhook within seconds.
-          // Force a page reload so usePlan re-fetches the updated status.
-          setTimeout(() => window.location.reload(), 2000);
+          // Set rcProOverride in App.js so Pro panels unlock immediately.
+          // Firestore will confirm via RevenueCat webhook + onSnapshot within seconds.
+          onProGranted?.();
         }}
       />
     );

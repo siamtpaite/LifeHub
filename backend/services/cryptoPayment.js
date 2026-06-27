@@ -1,9 +1,11 @@
 const { pollPayment } = require("./pollPayment");
 
+// Wallet addresses — set via env vars so they can be rotated without a code deploy.
+// Fall back to hardcoded values only if env not set (dev convenience).
 const addresses = {
-  SOL: "A8qcrU1VYQy398C7ESotbQsLgwyeaPXt8K3eYqk6C7D3",
-  BASE: "0x410bd58086F75f61AEe0546A74B7c3D9Ef461bD8",
-  TRON: "TXE8UZejabi93ks73VzsgeBqXM4C3fEydX"
+  SOL:  process.env.CRYPTO_VAULT_SOL  || "A8qcrU1VYQy398C7ESotbQsLgwyeaPXt8K3eYqk6C7D3",
+  BASE: process.env.CRYPTO_VAULT_BASE || "0x410bd58086F75f61AEe0546A74B7c3D9Ef461bD8",
+  TRON: process.env.CRYPTO_VAULT_TRON || "TXE8UZejabi93ks73VzsgeBqXM4C3fEydX",
 };
 
 const pricing = {

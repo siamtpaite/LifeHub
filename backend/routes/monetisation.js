@@ -11,17 +11,44 @@ const pricing = {
   yearly: 69.99
 };
 
+// Allowed networks for crypto payments
+const ALLOWED_NETWORKS = new Set(["SOL", "BASE", "TRON"]);
+
+// Tx hash format validators per network
+const TX_HASH_PATTERNS = {
+  SOL: /^[1-9A-HJ-NP-Za-km-z]{80,90}$/,   // Base58, ~88 chars
+  BASE: /^0x[a-fA-F0-9]{64}$/,              // EVM: 0x + 64 hex
+  TRON: /^[a-fA-F0-9]{64}$/,               // TRON: 64 hex
+};
+
 // Gumroad product permalink → plan name
 const GUMROAD_PERMALINK_TO_PLAN = {
   [process.env.GUMROAD_PRODUCT_ID_MONTHLY || "pmlxwh"]: "monthly",
   [process.env.GUMROAD_PRODUCT_ID_YEARLY  || "ievmvi"]: "yearly"
 };
 
+// Timing-safe string comparison to prevent timing attacks on secrets
+function safeEqual(a, b) {
+  try {
+    const aBuf = Buffer.from(String(a));
+    const bBuf = Buffer.from(String(b));
+    if (aBuf.length !== bBuf.length) {
+      // Still do the compare to avoid timing leak on length
+      crypto.timingSafeEqual(aBuf, aBuf);
+      return false;
+    }
+    return crypto.timingSafeEqual(aBuf, bBuf);
+  } catch {
+    return false;
+  }
+}
+
 // ─── Redirect to Gumroad checkout ────────────────────────────────────────────
 
 router.get("/gumroad/:plan", (req, res) => {
   const { plan } = req.params;
-  if (!gumroadLinks[plan]) {
+  // Strict whitelist — no dynamic strings from user input
+  if (!["monthly", "yearly"].includes(plan) || !gumroadLinks[plan]) {
     return res.status(404).send("Invalid plan");
   }
   return res.redirect(gumroadLinks[plan]);
@@ -30,9 +57,28 @@ router.get("/gumroad/:plan", (req, res) => {
 // ─── Gumroad Ping webhook ────────────────────────────────────────────────────
 // Configure in Gumroad Dashboard → Settings → Advanced → Ping URL:
 //   https://lifehub-bay.vercel.app/api/monetisation/gumroad/webhook
+//
+// Gumroad signs pings with HMAC-SHA256 if a webhook secret is configured.
+// Set GUMROAD_WEBHOOK_SECRET in env to match the secret in Gumroad dashboard.
 
-router.post("/gumroad/webhook", express.urlencoded({ extended: true }), async (req, res) => {
+router.post("/gumroad/webhook", express.urlencoded({ extended: true, limit: "50kb" }), async (req, res) => {
   try {
+    // Verify Gumroad webhook signature when secret is configured
+    const gumroadSecret = process.env.GUMROAD_WEBHOOK_SECRET;
+    if (gumroadSecret) {
+      const sig = req.headers["x-gumroad-signature"] || "";
+      // Gumroad sends the raw body as-is for HMAC; reconstruct from urlencoded body
+      const rawBody = new URLSearchParams(req.body).toString();
+      const expected = crypto
+        .createHmac("sha256", gumroadSecret)
+        .update(rawBody)
+        .digest("hex");
+      if (!safeEqual(sig, expected)) {
+        console.warn("[Gumroad] Invalid webhook signature");
+        return res.status(401).send("Unauthorized");
+      }
+    }
+
     const {
       email,
       product_permalink,
@@ -77,24 +123,33 @@ router.post("/gumroad/webhook", express.urlencoded({ extended: true }), async (r
 
 // ─── Crypto payment verify + upgrade ─────────────────────────────────────────
 // Requires Firebase ID token in Authorization header (Bearer <token>)
-// so we know which user to upgrade.
 
 router.post("/crypto/verify", async (req, res) => {
   try {
     const { network, txHash, plan } = req.body;
 
-    if (!network || !txHash || !plan || !pricing[plan]) {
-      return res.status(400).json({
-        success: false,
-        message: "network, txHash, and valid plan are required."
-      });
+    // Validate plan
+    if (!plan || !pricing[plan]) {
+      return res.status(400).json({ success: false, message: "Invalid plan." });
+    }
+
+    // Validate network
+    const normalizedNetwork = String(network || "").toUpperCase();
+    if (!ALLOWED_NETWORKS.has(normalizedNetwork)) {
+      return res.status(400).json({ success: false, message: "Invalid network." });
+    }
+
+    // Validate tx hash format to prevent ReDoS / expensive ops on garbage input
+    const pattern = TX_HASH_PATTERNS[normalizedNetwork];
+    if (!txHash || !pattern.test(String(txHash))) {
+      return res.status(400).json({ success: false, message: "Invalid transaction hash format." });
     }
 
     // Verify Firebase ID token to get the user's UID
     const authHeader = req.headers.authorization || "";
     const idToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
     if (!idToken) {
-      return res.status(401).json({ success: false, message: "Authorization required" });
+      return res.status(401).json({ success: false, message: "Authorization required." });
     }
 
     let uid;
@@ -103,27 +158,27 @@ router.post("/crypto/verify", async (req, res) => {
       const decoded = await admin.auth().verifyIdToken(idToken);
       uid = decoded.uid;
     } catch {
-      return res.status(401).json({ success: false, message: "Invalid auth token" });
+      return res.status(401).json({ success: false, message: "Invalid auth token." });
     }
 
     // Verify on-chain
-    const valid = await verifyCryptoPayment(network, txHash, plan);
+    const valid = await verifyCryptoPayment(normalizedNetwork, txHash, plan);
     if (!valid) {
-      return res.status(400).json({ success: false, message: "Payment not verified on-chain" });
+      return res.status(400).json({ success: false, message: "Payment not verified on-chain." });
     }
 
     // Upgrade plan in Firestore
     const result = await upgradePlanByUid(uid, plan, {
       source: "crypto",
-      network,
+      network: normalizedNetwork,
       txHash
     });
 
-    console.log(`[Crypto] Upgraded uid ${uid} to ${plan} via ${network} tx ${txHash}`);
+    console.log(`[Crypto] Upgraded uid ${uid} to ${plan} via ${normalizedNetwork} tx ${txHash}`);
     return res.json({ success: true, plan, planExpiry: result.planExpiry });
   } catch (err) {
     console.error("[Crypto] Verify error:", err.message);
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: "Internal server error." });
   }
 });
 
@@ -143,10 +198,10 @@ const RC_PURCHASE_EVENTS = new Set([
   "PRODUCT_CHANGE",
 ]);
 
-router.post("/revenuecat/webhook", express.json(), async (req, res) => {
-  // Verify the shared secret RevenueCat sends in the Authorization header
+router.post("/revenuecat/webhook", express.json({ limit: "100kb" }), async (req, res) => {
+  // Verify the shared secret RevenueCat sends in the Authorization header (timing-safe)
   const secret = process.env.REVENUECAT_WEBHOOK_SECRET;
-  if (secret && req.headers["authorization"] !== secret) {
+  if (secret && !safeEqual(req.headers["authorization"] || "", secret)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
@@ -159,10 +214,7 @@ router.post("/revenuecat/webhook", express.json(), async (req, res) => {
 
   try {
     if (RC_PURCHASE_EVENTS.has(type)) {
-      // Determine plan from product ID
       const plan = product_id?.includes("yearly") ? "yearly" : "monthly";
-
-      // Use the authoritative expiry RevenueCat provides when available
       const expiryOverride = expiration_at_ms
         ? new Date(Number(expiration_at_ms))
         : null;
@@ -176,7 +228,6 @@ router.post("/revenuecat/webhook", express.json(), async (req, res) => {
 
       console.log(`[RevenueCat] ${type}: upgraded ${app_user_id} → ${plan}`);
     } else if (type === "EXPIRATION") {
-      // Downgrade: clear plan and expiry so usePlan falls back to "free"
       const admin = require("firebase-admin");
       const db = admin.firestore();
       await db.collection("users").doc(app_user_id).set({
@@ -190,8 +241,8 @@ router.post("/revenuecat/webhook", express.json(), async (req, res) => {
     }
   } catch (err) {
     console.error("[RevenueCat] Webhook error:", err.message);
-    // Return 200 so RevenueCat doesn't retry — log the error for investigation
-    return res.status(200).json({ received: true, error: err.message });
+    // Return 200 so RevenueCat doesn't retry — failure is logged for investigation
+    return res.status(200).json({ received: true });
   }
 
   return res.status(200).json({ received: true });

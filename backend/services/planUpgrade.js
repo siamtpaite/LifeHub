@@ -42,7 +42,8 @@ async function upgradePlanByUid(uid, plan, meta = {}, expiryOverride = null) {
     : new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
 
   await db.collection("users").doc(uid).set({
-    plan,
+    plan: "pro",           // Always "pro" for any active subscription; usePlan checks plan === "pro"
+    billingInterval: plan, // "monthly" | "yearly" — billing cadence
     planExpiry: admin.firestore.Timestamp.fromDate(expiry),
     planActivatedAt: admin.firestore.Timestamp.fromDate(now),
     planMeta: meta

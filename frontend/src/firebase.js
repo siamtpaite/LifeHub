@@ -1,6 +1,8 @@
 import { initializeApp } from "firebase/app";
 import {
-  getAuth,
+  initializeAuth,
+  inMemoryPersistence,
+  browserLocalPersistence,
   GoogleAuthProvider,
   FacebookAuthProvider,
   OAuthProvider,
@@ -25,7 +27,18 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
+// Capacitor bridge is injected before JS runs so this is safe at module load.
+const isNative = !!(window.Capacitor?.isNativePlatform?.());
+const isAndroid = isNative && window.Capacitor?.getPlatform?.() === "android";
+const isIOS = isNative && window.Capacitor?.getPlatform?.() === "ios";
+
+// On native (WKWebView / Android WebView), IndexedDB operations can hang indefinitely,
+// blocking signInWithCredential forever. inMemoryPersistence avoids all storage I/O.
+// Auth state survives backgrounding (the WebView process stays alive); only a full
+// app kill requires re-login, which is acceptable for now.
+export const auth = initializeAuth(app, {
+  persistence: isNative ? inMemoryPersistence : browserLocalPersistence,
+});
 export const storage = getStorage(app);
 export const db = getFirestore(app);
 
@@ -33,25 +46,59 @@ const googleProvider = new GoogleAuthProvider();
 const facebookProvider = new FacebookAuthProvider();
 const appleProvider = new OAuthProvider("apple.com");
 
-const isNative = !!(window.Capacitor?.isNativePlatform?.());
+const GOOGLE_WEB_CLIENT_ID = "457163791884-u8uidgh5bphik0fcffba77na1fne6rhd.apps.googleusercontent.com";
 
 /**
  * Google Sign-In.
- * Native (Android/iOS): uses @codetrix-studio/capacitor-google-auth — native
- * account picker, no browser redirect needed.
- * Web: redirect-based flow via Firebase Auth.
+ * Android native: @codetrix-studio/capacitor-google-auth — native account picker.
+ * iOS native:     NativeGoogleAuthPlugin — ASWebAuthenticationSession + PKCE.
+ *                 signInWithPopup/Redirect both hang in WKWebView; ASWebAuthenticationSession
+ *                 is a real Safari overlay that Google permits for OAuth.
+ * Web/PWA:        redirect-based flow via Firebase Auth.
  */
 export async function signInWithGoogle() {
-  if (isNative) {
-    const { GoogleAuth } = await import(/* webpackIgnore: true */ "@codetrix-studio/capacitor-google-auth");
+  if (isAndroid) {
+    const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
+    await GoogleAuth.initialize({
+      clientId: GOOGLE_WEB_CLIENT_ID,
+      scopes: "profile,email",
+      grantOfflineAccess: true,
+    });
     const googleUser = await GoogleAuth.signIn();
     const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
     return signInWithCredential(auth, credential);
   }
+
+  if (isIOS) {
+    const { registerPlugin } = await import("@capacitor/core");
+    const NativeGoogleAuth = registerPlugin("NativeGoogleAuth");
+    const result = await NativeGoogleAuth.signIn();
+    if (result.error) {
+      if (result.error === "cancelled") {
+        throw Object.assign(new Error("Sign-in cancelled"), { code: "auth/popup-closed-by-user" });
+      }
+      throw Object.assign(new Error(result.error), { code: "auth/internal-error" });
+    }
+    const credential = GoogleAuthProvider.credential(result.idToken, result.accessToken || null);
+    return signInWithCredential(auth, credential);
+  }
+
   return signInWithRedirect(auth, googleProvider);
 }
 
-export const signInWithFacebook = () => signInWithRedirect(auth, facebookProvider);
+export const signInWithFacebook = () => {
+  // Facebook OAuth requires window.opener postMessage communication which breaks
+  // in Capacitor's WebView on both Android and iOS. Use Google or email instead.
+  if (isNative) {
+    return Promise.reject(
+      Object.assign(new Error("Facebook Sign-In is not available in the mobile app."), {
+        code: "auth/facebook-not-available-native",
+      })
+    );
+  }
+  return signInWithRedirect(auth, facebookProvider);
+};
+
 export const signInWithApple = () => signInWithRedirect(auth, appleProvider);
 
 /**
@@ -66,7 +113,8 @@ export function completeOAuthRedirect(timeoutMs = 8000) {
 
 const AUTH_ERROR_MESSAGES = {
   "auth/unauthorized-domain": "This site is not authorized for sign-in. Contact support if this persists.",
-  "auth/operation-not-allowed": "This sign-in method is not enabled.",
+  "auth/operation-not-allowed": "This sign-in method is not enabled. Please use Google or email/password.",
+  "auth/facebook-not-available-native": "Facebook Sign-In is not available in the mobile app. Please use Google or email/password.",
   "auth/popup-closed-by-user": "Sign-in was cancelled.",
   "auth/popup-blocked": "Sign-in was blocked. Allow pop-ups or try again.",
   "auth/cancelled-popup-request": "Sign-in was interrupted. Please try again.",

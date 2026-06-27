@@ -1,11 +1,12 @@
 const express = require("express");
 const { db } = require("../firebaseConfig");
 const requireAuth = require("../middlewareAuth");
+const { requirePro } = require("../services/planCheck");
 const { generateEnterpriseDashboard } = require("../services/enterpriseAnalytics");
 
 const router = express.Router();
 
-router.get("/", requireAuth, async (req, res) => {
+router.get("/", requireAuth, requirePro(), async (req, res) => {
   try {
     const uid = req.user.uid;
 

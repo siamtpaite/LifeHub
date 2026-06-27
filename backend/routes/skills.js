@@ -1,10 +1,11 @@
 const express = require("express");
 const { db } = require("../firebaseConfig");
 const requireAuth = require("../middlewareAuth");
+const { requireProOrLimit } = require("../services/planCheck");
 
 const router = express.Router();
 
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, requireProOrLimit("skills", 5), async (req, res) => {
   try {
     const { skillName, description } = req.body;
 
@@ -36,7 +37,7 @@ router.get("/", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/offer", requireAuth, async (req, res) => {
+router.post("/offer", requireAuth, requireProOrLimit("skills", 5), async (req, res) => {
   try {
     const { skillName, description } = req.body;
     if (!skillName) {

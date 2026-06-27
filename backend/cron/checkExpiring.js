@@ -120,10 +120,14 @@ async function checkSubscriptions(db) {
  * Main cron handler — called by Vercel Cron.
  */
 async function handler(req, res) {
-  // Verify cron secret to prevent unauthorized triggers
+  // Verify cron secret to prevent unauthorized triggers (timing-safe to prevent brute-force)
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && req.headers["x-cron-secret"] !== cronSecret) {
-    return res.status(401).json({ error: "Unauthorized" });
+  if (cronSecret) {
+    const provided = Buffer.from(req.headers["x-cron-secret"] || "");
+    const expected = Buffer.from(cronSecret);
+    const match = provided.length === expected.length &&
+      require("crypto").timingSafeEqual(provided, expected);
+    if (!match) return res.status(401).json({ error: "Unauthorized" });
   }
 
   try {

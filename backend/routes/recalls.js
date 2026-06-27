@@ -15,8 +15,17 @@ router.get("/", requireAuth, async (req, res) => {
       return res.json({});
     }
 
-    // Parse comma-separated product names
-    const productList = products.split(",").map(p => p.trim().toLowerCase());
+    // Guard against excessively long query strings that could cause ReDoS
+    if (products.length > 500) {
+      return res.status(400).json({ message: "Query too long." });
+    }
+
+    // Parse comma-separated product names (max 20 products, max 100 chars each)
+    const productList = products
+      .split(",")
+      .slice(0, 20)
+      .map(p => p.trim().toLowerCase().slice(0, 100))
+      .filter(Boolean);
     
     // Query recalls collection for matching products
     const snapshot = await db.collection("recalls")

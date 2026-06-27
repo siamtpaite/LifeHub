@@ -18,7 +18,7 @@ async function getRC() {
   if (!isNative) return null;
   if (_Purchases) return _Purchases;
   try {
-    const mod = await import(/* webpackIgnore: true */ "@revenuecat/purchases-capacitor");
+    const mod = await import("@revenuecat/purchases-capacitor");
     _Purchases = mod.Purchases;
     return _Purchases;
   } catch (e) {
@@ -62,7 +62,10 @@ export async function getOfferings() {
   const RC = await getRC();
   if (!RC) return null;
   try {
-    const result = await RC.getOfferings();
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("timeout")), 10000)
+    );
+    const result = await Promise.race([RC.getOfferings(), timeout]);
     return result.current ?? null;
   } catch (e) {
     console.error("[IAP] getOfferings error:", e);
@@ -90,6 +93,23 @@ export async function restorePurchases() {
   if (!RC) throw new Error("IAP not available on this platform");
   const { customerInfo } = await RC.restorePurchases();
   return customerInfo;
+}
+
+/**
+ * Fetch the current subscriber's CustomerInfo from RevenueCat.
+ * Used on app startup to immediately detect an active subscription even
+ * before the RevenueCat → backend webhook has updated Firestore.
+ */
+export async function getCurrentCustomerInfo() {
+  const RC = await getRC();
+  if (!RC) return null;
+  try {
+    const { customerInfo } = await RC.getCustomerInfo();
+    return customerInfo;
+  } catch (e) {
+    console.error("[IAP] getCustomerInfo error:", e);
+    return null;
+  }
 }
 
 /**

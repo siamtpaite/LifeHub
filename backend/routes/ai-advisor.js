@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const requireAuth = require("../middlewareAuth");
+const { requirePro } = require("../services/planCheck");
 
 const SYSTEM_PROMPT = `You are LifeHub AI Advisor — a sharp, friendly personal finance and lifestyle assistant embedded inside the LifeHub app.
 
@@ -19,7 +21,7 @@ Never say "I don't have access to" — you always have the user's data in contex
 Never ask for information the user has already provided in their data.
 Keep responses under 200 words unless the user asks for detail.`;
 
-router.post("/chat", async (req, res) => {
+router.post("/chat", requireAuth, requirePro(), async (req, res) => {
   try {
     const { messages, userData } = req.body;
 
