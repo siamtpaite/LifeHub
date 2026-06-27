@@ -58,7 +58,7 @@ const GOOGLE_WEB_CLIENT_ID = "457163791884-u8uidgh5bphik0fcffba77na1fne6rhd.apps
  */
 export async function signInWithGoogle() {
   if (isAndroid) {
-    const { GoogleAuth } = await import("@codetrix-studio/capacitor-google-auth");
+    const { GoogleAuth } = await import(/* webpackIgnore: true */ "@codetrix-studio/capacitor-google-auth");
     await GoogleAuth.initialize({
       clientId: GOOGLE_WEB_CLIENT_ID,
       scopes: "profile,email",
