@@ -8,9 +8,10 @@ const addresses = {
   TRON: process.env.CRYPTO_VAULT_TRON || "TXE8UZejabi93ks73VzsgeBqXM4C3fEydX",
 };
 
+// Crypto prices are discounted vs Gumroad fiat (no card/platform fees).
 const pricing = {
-  monthly: 6.99,
-  yearly: 69.99
+  monthly: 4.99,
+  yearly: 49.99
 };
 
 function normalizeNetwork(network) {

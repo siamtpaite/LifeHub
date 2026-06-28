@@ -188,6 +188,10 @@ function NativeUpgradePanel({ isPro, planExpiry, onProGranted }) {
   );
 }
 
+// Prices kept in one place so frontend display and backend verification stay in sync.
+const FIAT_PRICES  = { monthly: "$6.99", yearly: "$69.99" };
+const CRYPTO_PRICES = { monthly: "$4.99", yearly: "$49.99" };
+
 // ─── Web payment panel (PWA — Gumroad + Crypto) ───────────────────────────────
 
 function WebUpgradePanel({ authContext }) {
@@ -196,21 +200,28 @@ function WebUpgradePanel({ authContext }) {
   const [plan, setPlan] = useState("monthly");
   const [txHash, setTxHash] = useState("");
   const [msg, setMsg] = useState("");
+  const [isError, setIsError] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const verify = async () => {
-    setMsg("");
+    if (!txHash.trim()) { setIsError(true); setMsg("Please enter your transaction hash."); return; }
+    setMsg(""); setIsError(false); setVerifying(true);
     try {
       const t = await user.getIdToken();
       const r = await fetch(`${apiBaseUrl}/api/monetisation/crypto/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
-        body: JSON.stringify({ network, txHash, plan }),
+        body: JSON.stringify({ network, txHash: txHash.trim(), plan }),
       });
       const d = await r.json();
-      if (!r.ok || !d.success) throw new Error(d.message || "Verification failed");
+      if (!r.ok || !d.success) throw new Error(d.message || "Verification failed. Check your transaction hash and try again.");
+      setIsError(false);
       setMsg("✓ Payment verified! Your Pro plan is now active.");
     } catch (e) {
+      setIsError(true);
       setMsg(e.message);
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -231,6 +242,7 @@ function WebUpgradePanel({ authContext }) {
       <div className="panel-title">Upgrade to Pro</div>
       <div className="panel-sub">Unlock unlimited access to all LifeHub features.</div>
 
+      {/* Current plan status */}
       <div style={{
         padding: "16px 20px", marginBottom: 24,
         background: isPro ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.04)",
@@ -254,33 +266,78 @@ function WebUpgradePanel({ authContext }) {
 
       {!isPro && (
         <>
+          {/* ── Fiat via Gumroad ── */}
+          <div className="section-label" style={{ marginBottom: 8 }}>Pay with card via Gumroad</div>
           <div className="plan-grid">
             <div className="plan-card">
               <div className="plan-name">Monthly</div>
-              <div className="plan-price">$6.99 <span>/ mo</span></div>
+              <div className="plan-price">{FIAT_PRICES.monthly} <span>/ mo</span></div>
               <a href="https://siamtpaite.gumroad.com/l/pmlxwh" target="_blank" rel="noreferrer">Buy on Gumroad</a>
             </div>
             <div className="plan-card featured">
               <div className="plan-best">BEST VALUE</div>
               <div className="plan-name" style={{ marginTop: 8 }}>Yearly</div>
-              <div className="plan-price">$69.99 <span>/ yr</span></div>
+              <div className="plan-price">{FIAT_PRICES.yearly} <span>/ yr</span></div>
               <div className="plan-save">Save ~$14 vs monthly</div>
               <a href="https://siamtpaite.gumroad.com/l/ievmvi" target="_blank" rel="noreferrer">Buy on Gumroad</a>
             </div>
           </div>
 
-          <div className="section-label">Pay with crypto</div>
+          {/* ── Crypto (discounted) ── */}
+          <div className="section-label" style={{ marginTop: 20, marginBottom: 4 }}>Pay with crypto — save more</div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <div style={{
+              flex: 1, padding: "10px 14px", borderRadius: 10,
+              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+              textAlign: "center",
+            }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Monthly</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: "#fff" }}>{CRYPTO_PRICES.monthly}</div>
+              <div style={{ fontSize: 11, color: "#4ade80", marginTop: 3 }}>Save $2 vs card</div>
+            </div>
+            <div style={{
+              flex: 1, padding: "10px 14px", borderRadius: 10,
+              background: "rgba(79,142,247,0.08)", border: "1px solid rgba(79,142,247,0.2)",
+              textAlign: "center",
+            }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Yearly</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: "#fff" }}>{CRYPTO_PRICES.yearly}</div>
+              <div style={{ fontSize: 11, color: "#4ade80", marginTop: 3 }}>Save $20 vs card</div>
+            </div>
+          </div>
+
           <div className="addr-row"><div className="addr-net">SOL</div><div className="addr-val">A8qcrU1VYQy398C7ESotbQsLgwyeaPXt8K3eYqk6C7D3</div><button className="copy-btn" onClick={e => cp(e.target, "A8qcrU1VYQy398C7ESotbQsLgwyeaPXt8K3eYqk6C7D3")}>Copy</button></div>
           <div className="addr-row"><div className="addr-net">BASE</div><div className="addr-val">0x410bd58086F75f61AEe0546A74B7c3D9Ef461bD8</div><button className="copy-btn" onClick={e => cp(e.target, "0x410bd58086F75f61AEe0546A74B7c3D9Ef461bD8")}>Copy</button></div>
           <div className="addr-row"><div className="addr-net">TRON</div><div className="addr-val">TXE8UZejabi93ks73VzsgeBqXM4C3fEydX</div><button className="copy-btn" onClick={e => cp(e.target, "TXE8UZejabi93ks73VzsgeBqXM4C3fEydX")}>Copy</button></div>
 
           <div style={{ display: "flex", gap: 8, marginTop: 12, marginBottom: 10, flexWrap: "wrap" }}>
-            <select value={plan} onChange={e => setPlan(e.target.value)} style={{ flex: 1 }}><option value="monthly">monthly</option><option value="yearly">yearly</option></select>
-            <select value={network} onChange={e => setNetwork(e.target.value)} style={{ flex: 1 }}><option>SOL</option><option>BASE</option><option>TRON</option></select>
-            <input value={txHash} placeholder="Transaction hash" onChange={e => setTxHash(e.target.value)} style={{ flex: 2 }} />
+            <select value={plan} onChange={e => setPlan(e.target.value)} style={{ flex: 1 }}>
+              <option value="monthly">monthly — {CRYPTO_PRICES.monthly}</option>
+              <option value="yearly">yearly — {CRYPTO_PRICES.yearly}</option>
+            </select>
+            <select value={network} onChange={e => setNetwork(e.target.value)} style={{ flex: 1 }}>
+              <option value="SOL">SOL</option>
+              <option value="BASE">BASE</option>
+              <option value="TRON">TRON</option>
+            </select>
+            <input
+              value={txHash}
+              placeholder="Transaction hash"
+              onChange={e => setTxHash(e.target.value)}
+              style={{ flex: 2 }}
+            />
           </div>
-          <button className="btn btn-light" style={{ width: "100%" }} onClick={verify}>Verify Crypto Payment</button>
-          {msg && <p style={{ color: "#4ade80", fontSize: 13, marginTop: 8 }}>{msg}</p>}
+          <button
+            className="btn btn-light"
+            style={{ width: "100%", opacity: verifying ? 0.6 : 1, cursor: verifying ? "not-allowed" : "pointer" }}
+            onClick={verify}
+            disabled={verifying}
+          >
+            {verifying ? "Verifying…" : "Verify Crypto Payment"}
+          </button>
+          {msg && (
+            <p style={{ color: isError ? "#f87171" : "#4ade80", fontSize: 13, marginTop: 8 }}>{msg}</p>
+          )}
         </>
       )}
 
